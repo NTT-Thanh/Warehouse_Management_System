@@ -22,7 +22,25 @@ export const apiService = {
         return response.data; // Trả về { success: true, data: [...] }
     }
 };
-
+// Thêm các hàm gọi API users vào file api.ts của bạn
+export const userService = {
+    getAllUsers: async () => {
+        const res = await apiClient.get('/users');
+        return res.data;
+    },
+    createUser: async (data: any) => {
+        const res = await apiClient.post('/users', data);
+        return res.data;
+    },
+    updateUser: async (id: number, data: any) => {
+        const res = await apiClient.put(`/users/${id}`, data);
+        return res.data;
+    },
+    deleteUser: async (id: number) => {
+        const res = await apiClient.delete(`/users/${id}`);
+        return res.data;
+    }
+};
     
 
 

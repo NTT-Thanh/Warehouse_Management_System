@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import AdminLayout from './components/AdminLayout';
 import InventorySearch from './InventorySearch/InventorySearch';
 import './App.css'; // File CSS tuỳ chọn hoặc viết inline
+import User from './User/User';
 // Sau này có thể import thêm trang PushList ở đây nếu muốn
 
 export default function App() {
@@ -11,7 +12,9 @@ export default function App() {
         {/* Khung layout chung bọc bên ngoài */}
         <Route path="/" element={<AdminLayout />}>
           {/* Trang mặc định (Tra cứu tồn kho) */}
-          <Route index element={<InventorySearch />} />
+         
+
+<Route index element={<User />} />
           
           {/* Trang quản lý cất hàng (Ví dụ thêm vào sau) */}
           <Route path="push-list" element={<div style={{padding: 20}}><h2>Trang Quản lý Cất Hàng (Đang phát triển...)</h2></div>} />

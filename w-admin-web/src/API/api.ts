@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 // 1. Khởi tạo cấu hình axios chung cho toàn bộ ứng dụng web admin
-const API_BASE_URL = 'http://localhost:3000/api'; // Thay đổi port nếu backend của bạn chạy cổng khác
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? `http://${window.location.hostname}:3000/api`;
 
 const apiClient = axios.create({
     baseURL: API_BASE_URL,
@@ -22,17 +22,43 @@ export const apiService = {
         return response.data; // Trả về { success: true, data: [...] }
     }
 };
-// Thêm các hàm gọi API users vào file api.ts của bạn
+export type UserPayload = {
+    username: string;
+    password?: string;
+    full_name: string;
+    role: 'admin' | 'staff' | 'manager';
+};
+
+export type SignedInUser = {
+    id: number;
+    username: string;
+    full_name: string | null;
+    role: UserPayload['role'];
+};
+
+export const authService = {
+    login: async (username: string, password: string): Promise<SignedInUser> => {
+        const response = await apiClient.post('/users/login', { username, password });
+        return response.data.user;
+    },
+};
+
 export const userService = {
-    getAllUsers: async () => {
+    getAllUsers: async (): Promise<{
+        id: number;
+        username: string;
+        full_name: string;
+        role: UserPayload['role'];
+        created_at: string;
+    }[]> => {
         const res = await apiClient.get('/users');
         return res.data;
     },
-    createUser: async (data: any) => {
+    createUser: async (data: UserPayload) => {
         const res = await apiClient.post('/users', data);
         return res.data;
     },
-    updateUser: async (id: number, data: any) => {
+    updateUser: async (id: number, data: UserPayload) => {
         const res = await apiClient.put(`/users/${id}`, data);
         return res.data;
     },

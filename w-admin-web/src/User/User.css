@@ -1,0 +1,257 @@
+.user-management-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.user-page-heading,
+.user-list-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.user-page-heading h2,
+.user-form h3,
+.user-list-heading h3 {
+  margin: 0;
+  color: #26394a;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.user-page-heading p {
+  margin: 5px 0 0;
+  color: #8290a1;
+  font-size: 11px;
+}
+
+.user-refresh {
+  min-height: 34px;
+  padding: 0 12px;
+  border: 1px solid #e1e7ed;
+  border-radius: 6px;
+  color: #536174;
+  background: #fff;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.user-refresh:hover {
+  background: #f6f8fa;
+}
+
+.user-feedback {
+  padding: 11px 13px;
+  border: 1px solid;
+  border-radius: 7px;
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.user-feedback.error {
+  border-color: #f0d0cc;
+  color: #9b4841;
+  background: #fff5f3;
+}
+
+.user-feedback.success {
+  border-color: #d4ebdd;
+  color: #276a4e;
+  background: #f1fbf5;
+}
+
+.user-form,
+.user-list-panel {
+  overflow: hidden;
+  border: 1px solid #edf0f4;
+  border-radius: 9px;
+  background: #fff;
+  box-shadow: 0 2px 6px #142d3d06;
+}
+
+.user-form {
+  padding: 17px 19px;
+}
+
+.user-form h3 {
+  margin-bottom: 15px;
+}
+
+.user-form .form-grid {
+  padding: 0;
+}
+
+.user-form .form-grid label > span {
+  display: block;
+  margin: 0 0 6px;
+  color: #59687a;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.user-form .form-grid input,
+.user-form .form-grid select {
+  width: 100%;
+  height: 36px;
+  padding: 0 11px;
+  border: 1px solid #e2e7ed;
+  border-radius: 5px;
+  outline: none;
+  color: #344154;
+  background: #fff;
+  font: inherit;
+  font-size: 11px;
+}
+
+.user-form .form-grid input:focus,
+.user-form .form-grid select:focus {
+  border-color: #62b695;
+  box-shadow: 0 0 0 3px #1a9b6720;
+}
+
+.user-form .form-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 15px;
+}
+
+.user-form .btn-submit,
+.user-form .btn-cancel {
+  min-height: 35px;
+  padding: 0 13px;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.user-form .btn-submit {
+  color: #fff;
+  background: #12845b;
+}
+
+.user-form .btn-submit:hover:not(:disabled) {
+  background: #0d704c;
+}
+
+.user-form .btn-submit:disabled {
+  cursor: wait;
+  opacity: .7;
+}
+
+.user-form .btn-cancel {
+  border-color: #e1e7ed;
+  color: #536174;
+  background: #fff;
+}
+
+.user-list-heading {
+  min-height: 55px;
+  padding: 0 19px;
+  border-bottom: 1px solid #edf0f3;
+}
+
+.user-list-heading h3 {
+  font-size: 12px;
+}
+
+.user-list-heading > span {
+  padding: 3px 7px;
+  border-radius: 10px;
+  color: #8190a2;
+  background: #f2f5f8;
+  font-size: 9px;
+}
+
+.user-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.user-table th {
+  height: 39px;
+  padding: 0 13px;
+  border-bottom: 1px solid #edf0f3;
+  color: #8490a0;
+  background: #fafbfd;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: .4px;
+  white-space: nowrap;
+}
+
+.user-table th:first-child,
+.user-table td:first-child {
+  padding-left: 19px;
+}
+
+.user-table td {
+  padding: 11px 13px;
+  border-bottom: 1px solid #f0f2f5;
+  color: #637084;
+  font-size: 10px;
+}
+
+.user-table tr:last-child td {
+  border-bottom: 0;
+}
+
+.user-table .btn-edit,
+.user-table .btn-delete {
+  margin-right: 9px;
+  padding: 2px 0;
+  border: 0;
+  background: transparent;
+  font-size: 9px;
+  font-weight: 600;
+}
+
+.user-table .btn-edit {
+  color: #44769a;
+}
+
+.user-table .btn-delete {
+  color: #c36968;
+}
+
+.badge-role {
+  display: inline-flex;
+  padding: 4px 7px;
+  border-radius: 12px;
+  font-size: 9px;
+  font-weight: 600;
+}
+
+.badge-role.admin {
+  color: #73549d;
+  background: #f3effa;
+}
+
+.badge-role.manager {
+  color: #47719a;
+  background: #eef5fc;
+}
+
+.badge-role.staff {
+  color: #168059;
+  background: #eaf6ef;
+}
+
+.user-empty {
+  padding: 24px !important;
+  color: #8491a1 !important;
+  text-align: center;
+}
+
+@media (max-width: 560px) {
+  .user-page-heading {
+    align-items: flex-start;
+  }
+
+  .user-form .form-grid {
+    grid-template-columns: 1fr;
+  }
+}

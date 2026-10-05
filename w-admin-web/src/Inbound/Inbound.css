@@ -1,0 +1,158 @@
+.inbound-row-actions {
+  white-space: nowrap;
+}
+
+.inbound-row-actions > button {
+  min-height: 27px;
+  margin-right: 7px;
+  padding: 0 8px;
+  border: 1px solid #dfe5eb;
+  border-radius: 5px;
+  color: #13845b;
+  background: #fff;
+  font-size: 10px;
+}
+
+.management-primary {
+  color: #26374a !important;
+  font-weight: 700;
+}
+
+.inbound-create-action {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.inbound-create-action button,
+.inbound-lines-heading button {
+  min-height: 34px;
+  padding: 0 13px;
+  border: 1px solid #13845b;
+  border-radius: 6px;
+  color: #fff;
+  background: #13845b;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.inbound-modal {
+  width: min(950px, 100%);
+}
+
+.inbound-lines {
+  display: grid;
+  gap: 10px;
+  padding: 0 22px 18px;
+}
+
+.inbound-lines-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.inbound-lines-heading h3 {
+  margin: 0;
+  color: #26394a;
+  font-size: 12px;
+}
+
+.inbound-lines-heading p {
+  margin: 4px 0 0;
+  color: #8490a0;
+  font-size: 10px;
+}
+
+.inbound-lines-heading button {
+  min-height: 30px;
+  white-space: nowrap;
+}
+
+.inbound-line {
+  display: grid;
+  grid-template-columns: 24px minmax(160px, 1.5fr) minmax(135px, 1.1fr) minmax(100px, 1fr) minmax(95px, .8fr) 30px;
+  align-items: end;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid #e9edf2;
+  border-radius: 7px;
+  background: #fafbfd;
+}
+
+.inbound-line-number {
+  display: grid;
+  width: 22px;
+  height: 22px;
+  place-items: center;
+  border-radius: 50%;
+  color: #13845b;
+  background: #eaf7ef;
+  font-size: 10px;
+}
+
+.inbound-line label {
+  min-width: 0;
+}
+
+.inbound-line label span {
+  display: block;
+  margin: 0 0 5px;
+  color: #59687a;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.inbound-line input,
+.inbound-line select {
+  width: 100%;
+  height: 36px;
+  padding: 0 8px;
+  border: 1px solid #e2e7ed;
+  border-radius: 5px;
+  color: #344154;
+  background: #fff;
+  font: inherit;
+  font-size: 10px;
+}
+
+.inbound-line-remove {
+  width: 28px;
+  height: 28px;
+  border: 1px solid #f2dada;
+  border-radius: 5px;
+  color: #b33434;
+  background: #fff;
+  font-size: 18px;
+}
+
+.inbound-line-remove:disabled {
+  cursor: not-allowed;
+  opacity: .4;
+}
+
+.inbound-edit-note {
+  margin: 0;
+  padding: 0 22px 15px;
+  color: #8490a0;
+  font-size: 10px;
+}
+
+.inbound-form-error {
+  margin: 0 22px 14px;
+}
+
+@media (max-width: 850px) {
+  .inbound-modal .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .inbound-line {
+    grid-template-columns: 24px repeat(2, minmax(0, 1fr)) 30px;
+  }
+
+  .inbound-line label:nth-of-type(1),
+  .inbound-line label:nth-of-type(2) {
+    grid-column: span 2;
+  }
+}

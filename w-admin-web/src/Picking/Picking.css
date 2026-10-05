@@ -1,0 +1,43 @@
+.picking-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.picking-toolbar .management-search {
+  flex: 1;
+}
+
+.picking-assign,
+.picking-row-actions > button {
+  min-height: 34px;
+  padding: 0 12px;
+  border: 1px solid #13845b;
+  border-radius: 6px;
+  color: #fff;
+  background: #13845b;
+  font-size: 10px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.picking-row-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.picking-row-actions > button {
+  min-height: 27px;
+  padding: 0 8px;
+  border-color: #dfe5eb;
+  color: #b33434;
+  background: #fff;
+}
+
+@media (max-width: 650px) {
+  .picking-toolbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+}

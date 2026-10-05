@@ -1,0 +1,262 @@
+.management-page {
+  display: grid;
+  gap: 16px;
+  padding: 20px;
+  color: #26374a;
+}
+
+.management-heading,
+.management-list-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.management-heading h2,
+.management-list-heading h3,
+.management-form h3 {
+  margin: 0;
+  color: #25364a;
+}
+
+.management-heading h2 {
+  font-size: 18px;
+}
+
+.management-heading p {
+  margin: 6px 0 0;
+  color: #7d8a9a;
+}
+
+.management-heading > button,
+.management-search button,
+.management-actions button,
+.management-row-actions button {
+  min-height: 34px;
+  padding: 0 13px;
+  border: 1px solid #13845b;
+  border-radius: 6px;
+  color: #fff;
+  background: #13845b;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.management-heading button:disabled,
+.management-search button:disabled,
+.management-actions button:disabled {
+  cursor: wait;
+  opacity: .65;
+}
+
+.management-search {
+  display: flex;
+  gap: 8px;
+}
+
+.management-search input,
+.management-search select,
+.management-form input,
+.management-form select {
+  min-width: 0;
+  height: 36px;
+  padding: 0 11px;
+  border: 1px solid #dfe5eb;
+  border-radius: 6px;
+  outline: none;
+  color: #344154;
+  background: #fff;
+  font: inherit;
+  font-size: 11px;
+}
+
+.management-search input {
+  flex: 1;
+}
+
+.management-search select {
+  min-width: 150px;
+}
+
+.management-search input:focus,
+.management-search select:focus,
+.management-form input:focus,
+.management-form select:focus {
+  border-color: #62b695;
+  box-shadow: 0 0 0 3px #1a9b6720;
+}
+
+.management-search button.secondary,
+.management-actions button.secondary {
+  border-color: #dfe5eb;
+  color: #5f6d7e;
+  background: #fff;
+}
+
+.management-form,
+.management-list {
+  overflow: hidden;
+  border: 1px solid #e9edf2;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.management-form {
+  display: grid;
+  gap: 14px;
+  padding: 17px;
+}
+
+.management-form h3,
+.management-list-heading h3 {
+  font-size: 13px;
+}
+
+.management-form-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 13px;
+}
+
+.management-form-grid label {
+  display: grid;
+  gap: 6px;
+}
+
+.management-form-grid label span {
+  color: #647286;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.management-actions,
+.management-row-actions {
+  display: flex;
+  gap: 7px;
+}
+
+.management-list-heading {
+  min-height: 52px;
+  padding: 0 16px;
+  border-bottom: 1px solid #edf0f3;
+}
+
+.management-list-heading span {
+  padding: 4px 8px;
+  border-radius: 12px;
+  color: #8190a2;
+  background: #f2f5f8;
+  font-size: 10px;
+}
+
+.management-table-wrap {
+  overflow-x: auto;
+}
+
+.management-table-wrap table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.management-table-wrap th {
+  padding: 11px 13px;
+  color: #8490a0;
+  background: #fafbfd;
+  font-size: 9px;
+  letter-spacing: .3px;
+  white-space: nowrap;
+}
+
+.management-table-wrap td {
+  padding: 11px 13px;
+  border-top: 1px solid #f0f2f5;
+  color: #637084;
+  font-size: 10px;
+  vertical-align: middle;
+}
+
+.management-row-actions button {
+  min-height: 27px;
+  padding: 0 8px;
+  font-size: 10px;
+}
+
+.management-row-actions button.delete {
+  border-color: #f2dada;
+  color: #b33434;
+  background: #fff;
+}
+
+.management-empty {
+  padding: 24px 12px;
+  color: #8995a4;
+  text-align: center;
+  font-size: 11px;
+}
+
+.management-feedback {
+  padding: 10px 13px;
+  border-radius: 6px;
+  font-size: 11px;
+}
+
+.management-feedback.error {
+  color: #a52e2e;
+  background: #fff0f0;
+}
+
+.management-feedback.success {
+  color: #14764d;
+  background: #eaf7ef;
+}
+
+.management-status {
+  display: inline-block;
+  padding: 4px 7px;
+  border-radius: 12px;
+  color: #556579;
+  background: #f1f4f7;
+  font-size: 9px;
+  white-space: nowrap;
+}
+
+.management-status.success {
+  color: #14764d;
+  background: #eaf7ef;
+}
+
+.management-status.warning {
+  color: #99650a;
+  background: #fff5dc;
+}
+
+.management-status.danger {
+  color: #a52e2e;
+  background: #fff0f0;
+}
+
+@media (max-width: 760px) {
+  .management-page {
+    padding: 12px;
+  }
+
+  .management-form-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 520px) {
+  .management-form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .management-search {
+    flex-wrap: wrap;
+  }
+
+  .management-search input {
+    flex-basis: 100%;
+  }
+}

@@ -1,0 +1,230 @@
+.shipping-management {
+  display: grid;
+  gap: 18px;
+  padding: 22px;
+  color: #26374a;
+}
+
+.shipping-heading,
+.shipping-list-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.shipping-heading h2,
+.shipping-list-heading h3,
+.shipping-form h3 {
+  margin: 0;
+  color: #25364a;
+}
+
+.shipping-heading h2 {
+  font-size: 18px;
+}
+
+.shipping-heading p {
+  margin: 6px 0 0;
+  color: #7d8a9a;
+}
+
+.shipping-refresh,
+.shipping-search button,
+.shipping-form-actions button,
+.shipping-actions button {
+  min-height: 36px;
+  padding: 0 14px;
+  border: 1px solid #13845b;
+  border-radius: 6px;
+  color: #fff;
+  background: #13845b;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.shipping-refresh:disabled,
+.shipping-search button:disabled,
+.shipping-form-actions button:disabled {
+  cursor: wait;
+  opacity: .65;
+}
+
+.shipping-feedback {
+  padding: 11px 14px;
+  border-radius: 6px;
+  font-size: 12px;
+}
+
+.shipping-feedback.error {
+  color: #a52e2e;
+  background: #fff0f0;
+}
+
+.shipping-feedback.success {
+  color: #14764d;
+  background: #eaf7ef;
+}
+
+.shipping-search {
+  display: flex;
+  gap: 9px;
+}
+
+.shipping-search input,
+.shipping-form input {
+  min-width: 0;
+  height: 38px;
+  padding: 0 12px;
+  border: 1px solid #dfe5eb;
+  border-radius: 6px;
+  outline: none;
+  color: #344154;
+  background: #fff;
+  font: inherit;
+  font-size: 12px;
+}
+
+.shipping-search input {
+  flex: 1;
+}
+
+.shipping-search input:focus,
+.shipping-form input:focus {
+  border-color: #62b695;
+  box-shadow: 0 0 0 3px #1a9b6720;
+}
+
+.shipping-search button.secondary,
+.shipping-form-actions button.secondary {
+  border-color: #dfe5eb;
+  color: #5f6d7e;
+  background: #fff;
+}
+
+.shipping-form,
+.shipping-list {
+  overflow: hidden;
+  border: 1px solid #e9edf2;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.shipping-form {
+  padding: 18px;
+}
+
+.shipping-form h3,
+.shipping-list-heading h3 {
+  font-size: 13px;
+}
+
+.shipping-form-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 16px;
+}
+
+.shipping-form-grid label {
+  display: grid;
+  gap: 6px;
+}
+
+.shipping-form-grid label span {
+  color: #647286;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.shipping-form-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 15px;
+}
+
+.shipping-list-heading {
+  min-height: 54px;
+  padding: 0 17px;
+  border-bottom: 1px solid #edf0f3;
+}
+
+.shipping-list-heading span {
+  padding: 4px 8px;
+  border-radius: 12px;
+  color: #8190a2;
+  background: #f2f5f8;
+  font-size: 10px;
+}
+
+.shipping-table-wrap {
+  overflow-x: auto;
+}
+
+.shipping-table-wrap table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.shipping-table-wrap th {
+  padding: 12px 14px;
+  color: #8490a0;
+  background: #fafbfd;
+  font-size: 10px;
+  letter-spacing: .3px;
+  white-space: nowrap;
+}
+
+.shipping-table-wrap td {
+  padding: 12px 14px;
+  border-top: 1px solid #f0f2f5;
+  color: #637084;
+  font-size: 11px;
+}
+
+.shipping-table-wrap .shipping-name {
+  color: #26374a;
+  font-weight: 600;
+}
+
+.shipping-actions {
+  display: flex;
+  gap: 7px;
+}
+
+.shipping-actions button {
+  min-height: 28px;
+  padding: 0 9px;
+  font-size: 10px;
+}
+
+.shipping-actions button.delete {
+  border-color: #f2dada;
+  color: #b33434;
+  background: #fff;
+}
+
+.shipping-table-wrap td.shipping-empty {
+  padding: 30px 12px;
+  color: #8995a4;
+  text-align: center;
+}
+
+@media (max-width: 700px) {
+  .shipping-management {
+    padding: 12px;
+  }
+
+  .shipping-form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .shipping-search {
+    flex-wrap: wrap;
+  }
+
+  .shipping-search input {
+    flex-basis: 100%;
+  }
+}

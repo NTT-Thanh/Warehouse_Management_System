@@ -22,6 +22,83 @@ export const apiService = {
         return response.data; // Trả về { success: true, data: [...] }
     }
 };
+
+export type Shipping = {
+    id: number;
+    name: string;
+    phone: string | null;
+    contact_person: string | null;
+    created_at: string;
+};
+
+export type ShippingPayload = {
+    name: string;
+    phone: string | null;
+    contact_person: string | null;
+};
+
+export const shippingService = {
+    getAll: async (): Promise<Shipping[]> => {
+        const response = await apiClient.get<Shipping[]>('/shippings');
+        return response.data;
+    },
+    search: async (keyword: string): Promise<Shipping[]> => {
+        const response = await apiClient.get<Shipping[]>('/shippings/search', { params: { keyword } });
+        return response.data;
+    },
+    create: async (payload: ShippingPayload) => {
+        const response = await apiClient.post<{ id: number }>('/shippings', payload);
+        return response.data;
+    },
+    update: async (id: number, payload: ShippingPayload) => {
+        const response = await apiClient.put(`/shippings/${id}`, payload);
+        return response.data;
+    },
+    delete: async (id: number) => {
+        const response = await apiClient.delete(`/shippings/${id}`);
+        return response.data;
+    },
+};
+
+export type Supplier = {
+    id: number;
+    name: string;
+    phone: string | null;
+    email: string | null;
+    address: string | null;
+    created_at: string;
+};
+
+export type SupplierPayload = {
+    name: string;
+    phone: string | null;
+    email: string | null;
+    address: string | null;
+};
+
+export const supplierService = {
+    getAll: async (): Promise<Supplier[]> => {
+        const response = await apiClient.get<Supplier[]>('/suppliers');
+        return response.data;
+    },
+    search: async (keyword: string): Promise<Supplier[]> => {
+        const response = await apiClient.get<Supplier[]>('/suppliers/search', { params: { keyword } });
+        return response.data;
+    },
+    create: async (payload: SupplierPayload) => {
+        const response = await apiClient.post<{ id: number }>('/suppliers', payload);
+        return response.data;
+    },
+    update: async (id: number, payload: SupplierPayload) => {
+        const response = await apiClient.put(`/suppliers/${id}`, payload);
+        return response.data;
+    },
+    delete: async (id: number) => {
+        const response = await apiClient.delete(`/suppliers/${id}`);
+        return response.data;
+    },
+};
+
 export type UserPayload = {
     username: string;
     password?: string;
@@ -34,6 +111,42 @@ export type SignedInUser = {
     username: string;
     full_name: string | null;
     role: UserPayload['role'];
+};
+
+export type ApiRecord = Record<string, string | number | null>;
+export type ApiResource =
+    | 'products'
+    | 'locations'
+    | 'inbound_receipts'
+    | 'inbound_details'
+    | 'outbound_orders'
+    | 'outbound_details'
+    | 'picking_tasks'
+    | 'inventory'
+    | 'categories'
+    | 'bins'
+    | 'suppliers'
+    | 'shippings'
+    | 'batches'
+    | 'users';
+
+export const dataService = {
+    getAll: async <T,>(resource: ApiResource): Promise<T[]> => {
+        const response = await apiClient.get<T[]>(`/${resource}`);
+        return response.data;
+    },
+    create: async (resource: ApiResource, data: ApiRecord) => {
+        const response = await apiClient.post<{ id: number }>(`/${resource}`, data);
+        return response.data;
+    },
+    update: async (resource: ApiResource, id: number, data: ApiRecord) => {
+        const response = await apiClient.put(`/${resource}/${id}`, data);
+        return response.data;
+    },
+    delete: async (resource: ApiResource, id: number) => {
+        const response = await apiClient.delete(`/${resource}/${id}`);
+        return response.data;
+    },
 };
 
 export const authService = {

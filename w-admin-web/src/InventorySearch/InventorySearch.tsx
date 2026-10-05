@@ -19,12 +19,14 @@ export default function InventorySearch() {
     const [data, setData] = useState<InventoryItem[]>([]);
     const [searched, setSearched] = useState(false);
     const [loading, setLoading] = useState(false);
+    const [errorMessage, setErrorMessage] = useState('');
 
     const handleSearch = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!keyword.trim()) return;
 
         setLoading(true);
+        setErrorMessage('');
         try {
             let res;
             if (searchType === 'item') {
@@ -41,6 +43,7 @@ export default function InventorySearch() {
         } catch (error) {
             console.error(error);
             setData([]);
+            setErrorMessage('Không thể truy vấn tồn kho từ MySQL. Hãy kiểm tra kết nối backend.');
         } finally {
             setLoading(false);
             setSearched(true);
@@ -53,17 +56,17 @@ export default function InventorySearch() {
 
             {/* Thanh chọn chế độ tìm kiếm */}
             <div className="search-tabs">
-                <button 
+                <button
                     className={searchType === 'item' ? 'tab-btn active' : 'tab-btn'}
-                    onClick={() => { setSearchType('item'); setKeyword(''); setData([]); setSearched(false); }}
+                    onClick={() => { setSearchType('item'); setKeyword(''); setData([]); setSearched(false); setErrorMessage(''); }}
                 >
                     🔍 Tìm theo Tên Sản Phẩm (Item Inventory)
                 </button>
-                <button 
+                <button
                     className={searchType === 'loc' ? 'tab-btn active' : 'tab-btn'}
-                    onClick={() => { setSearchType('loc'); setKeyword(''); setData([]); setSearched(false); }}
+                    onClick={() => { setSearchType('loc'); setKeyword(''); setData([]); setSearched(false); setErrorMessage(''); }}
                 >
-                    📍 Tìm theo Vị Trí (Location / Bin)
+                    Tìm theo Vị Trí (Location / Bin)
                 </button>
             </div>
 
@@ -83,6 +86,8 @@ export default function InventorySearch() {
             <div className="result-section">
                 {loading ? (
                     <p className="status-text">Đang tải dữ liệu...</p>
+                ) : errorMessage ? (
+                    <p className="status-text text-warning" role="alert">{errorMessage}</p>
                 ) : !searched ? (
                     <p className="status-text text-muted">Vui lòng nhập từ khóa để tra cứu thông tin tồn kho.</p>
                 ) : data.length === 0 ? (

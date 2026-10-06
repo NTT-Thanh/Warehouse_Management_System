@@ -1,0 +1,587 @@
+DROP DATABASE IF EXISTS warehouse;
+CREATE DATABASE warehouse CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+USE warehouse;
+
+-- 1. Bảng Kho (warehouses): Lưu thông tin các kho hàng của hệ thống
+CREATE TABLE warehouses (
+    id INT AUTO_INCREMENT PRIMARY KEY,                -- Mã định danh kho (Khóa chính, tự tăng)
+    name VARCHAR(100) NOT NULL,                       -- Tên kho hàng (Ví dụ: Kho tổng Hưng Yên)
+    address VARCHAR(255),                             -- Địa chỉ chi tiết của kho
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP    -- Thời gian tạo bản ghi
+);
+
+-- 2. Bảng Khu vực trong kho (zones): Phân chia kho thành các khu vực lớn (Khu A, Khu B...)
+CREATE TABLE zones (
+    id INT AUTO_INCREMENT PRIMARY KEY,                -- Mã định danh khu vực (Khóa chính, tự tăng)
+    warehouse_id INT NOT NULL,                        -- Thuộc kho nào (Khóa ngoại trỏ tới bảng warehouses)
+    name VARCHAR(50) NOT NULL,                        -- Tên khu vực (Ví dụ: Khu A - Điện tử)
+    FOREIGN KEY (warehouse_id) REFERENCES warehouses(id) ON DELETE CASCADE
+);
+
+-- 3. Bảng Dãy kệ (racks): Các dãy kệ đặt trong từng khu vực
+CREATE TABLE racks (
+    id INT AUTO_INCREMENT PRIMARY KEY,                -- Mã định danh dãy kệ (Khóa chính, tự tăng)
+    zone_id INT NOT NULL,                             -- Thuộc khu vực nào (Khóa ngoại trỏ tới bảng zones)
+    name VARCHAR(50) NOT NULL,                        -- Tên hoặc mã dãy kệ (Ví dụ: Kệ A1)
+    FOREIGN KEY (zone_id) REFERENCES zones(id) ON DELETE CASCADE
+);
+
+-- 4. Bảng Tầng kệ (shelves): Các tầng nằm trên một dãy kệ
+CREATE TABLE shelves (
+    id INT AUTO_INCREMENT PRIMARY KEY,                -- Mã định danh tầng kệ (Khóa chính, tự tăng)
+    rack_id INT NOT NULL,                             -- Thuộc dãy kệ nào (Khóa ngoại trỏ tới bảng racks)
+    name VARCHAR(50) NOT NULL,                        -- Tên hoặc số thứ tự tầng (Ví dụ: Tầng 1, Tầng 2)
+    FOREIGN KEY (rack_id) REFERENCES racks(id) ON DELETE CASCADE
+);
+
+-- 5. Bảng Ô chứa hàng (bins): Các ô/khay nhỏ nằm trên tầng kệ để chứa hàng hóa cụ thể
+CREATE TABLE bins (
+    id INT AUTO_INCREMENT PRIMARY KEY,                -- Mã định danh ô chứa (Khóa chính, tự tăng)
+    shelf_id INT NOT NULL,                            -- Thuộc tầng kệ nào (Khóa ngoại trỏ tới bảng shelves)
+    name VARCHAR(50) NOT NULL,                        -- Tên hoặc mã ô chứa (Ví dụ: Bin-A1-01)
+    FOREIGN KEY (shelf_id) REFERENCES shelves(id) ON DELETE CASCADE
+);
+
+-- 6. Bảng Vị trí chi tiết (locations): Định vị toàn diện dùng để gán nhãn vị trí cho hàng hóa
+CREATE TABLE locations (
+id INT AUTO_INCREMENT PRIMARY KEY,                -- Mã định danh vị trí (Khóa chính, tự tăng)
+bin_id INT,                                       -- Liên kết đến ô chứa cụ thể (Khóa ngoại trỏ tới bảng bins)
+    code VARCHAR(100) UNIQUE NOT NULL,                -- Mã vị trí chuẩn dùng để quét mã vạch (Barcode/QR)
+    description TEXT,                                 -- Mô tả chi tiết về vị trí này
+    FOREIGN KEY (bin_id) REFERENCES bins(id) ON DELETE SET NULL
+);
+
+-- 7. Bảng Danh mục sản phẩm (categories): Phân loại hàng hóa trong kho
+CREATE TABLE categories (
+    id INT AUTO_INCREMENT PRIMARY KEY,                -- Mã định danh danh mục (Khóa chính, tự tăng)
+    name VARCHAR(100) NOT NULL,                       -- Tên danh mục (Ví dụ: Linh kiện điện tử)
+    description TEXT                                  -- Mô tả chi tiết về danh mục
+);
+
+-- 8. Bảng Sản phẩm / SKU (products): Lưu thông tin chi tiết từng mặt hàng lưu kho (đã bỏ trường giá)
+CREATE TABLE products (
+    id INT AUTO_INCREMENT PRIMARY KEY,                -- Mã định danh sản phẩm (Khóa chính, tự tăng)
+    sku VARCHAR(50) UNIQUE NOT NULL,                  -- Mã SKU quản lý hàng hóa (Mã vạch định danh duy nhất)
+    name VARCHAR(150) NOT NULL,                       -- Tên sản phẩm hàng hóa
+    category_id INT,                                  -- Thuộc danh mục nào (Khóa ngoại trỏ tới bảng categories)
+    unit VARCHAR(20) DEFAULT 'pcs',                   -- Đơn vị tính (Ví dụ: cái, hộp, kg, thùng)
+    min_stock_level INT DEFAULT 5,                    -- Mức tồn kho tối thiểu để cảnh báo thiếu hàng (Low stock alert)
+    FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE SET NULL
+);
+
+-- 9. Bảng Người dùng hệ thống (users): Quản lý tài khoản nhân viên và quyền hạn truy cập
+CREATE TABLE users (
+    id INT AUTO_INCREMENT PRIMARY KEY,                -- Mã định danh người dùng (Khóa chính, tự tăng)
+    username VARCHAR(50) UNIQUE NOT NULL,             -- Tên đăng nhập hệ thống
+    password VARCHAR(255) NOT NULL,                   -- Mật khẩu tài khoản (đã mã hóa)
+    full_name VARCHAR(100),                           -- Họ và tên đầy đủ của nhân viên
+    role ENUM('admin', 'staff', 'manager') DEFAULT 'staff', -- Phân quyền hệ thống (Quản trị viên, Nhân viên, Quản lý kho)
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP    -- Thời gian tạo tài khoản
+);
+
+-- 10. Bảng Tồn kho (inventory): Bảng trung gian theo dõi số lượng thực tế của sản phẩm tại từng ô chứa
+-- Nếu bạn muốn thay thế bảng inventory cũ hoặc chỉnh sửa lại:
+
+CREATE TABLE inventory (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    product_id INT NOT NULL,                      -- Mã sản phẩm
+    bin_id INT NOT NULL,                          -- Ô chứa hàng
+    batch_id INT NOT NULL,                        -- Lô hàng cụ thể
+quantity INT DEFAULT 0,                       -- Số lượng tồn của lô này tại ô này
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE,
+    FOREIGN KEY (bin_id) REFERENCES bins(id) ON DELETE CASCADE,
+    FOREIGN KEY (batch_id) REFERENCES batches(id) ON DELETE CASCADE
+);
+CREATE TABLE batches (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    batch_code VARCHAR(100) UNIQUE NOT NULL,      -- Mã lô hàng (Ví dụ: LOT-202609-01)
+    product_id INT NOT NULL,                      -- Thuộc sản phẩm nào
+    mfg_date DATE,                                -- Ngày sản xuất
+    exp_date DATE,                                -- Hạn sử dụng
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
+);
+CREATE TABLE inventory_audits (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    audit_code VARCHAR(50) UNIQUE NOT NULL,       -- Mã phiếu kiểm kê (Ví dụ: AUD-202609-001)
+    created_by INT NOT NULL,                      -- Nhân viên tạo phiếu (trỏ tới bảng users)
+    status ENUM('Draft', 'In_Progress', 'Completed', 'Cancelled') DEFAULT 'Draft', -- Trạng thái kiểm kê
+    note TEXT,                                    -- Ghi chú đợt kiểm kê
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (created_by) REFERENCES users(id)
+);
+CREATE TABLE audit_details (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    audit_id INT NOT NULL,                        -- Thuộc phiếu kiểm kê nào
+    bin_id INT NOT NULL,                          -- Vị trí kiểm tra
+    product_id INT NOT NULL,                      -- Sản phẩm kiểm tra
+    batch_id INT,                                 -- Lô hàng (nếu kiểm tra chi tiết theo lô)
+    system_quantity INT NOT NULL,                 -- Số lượng hệ thống ghi nhận trước khi kiểm
+    actual_quantity INT DEFAULT 0,                -- Số lượng thực tế nhân viên đếm được (pcs)
+    variance INT GENERATED ALWAYS AS (actual_quantity - system_quantity) STORED, -- Độ chênh lệch tự động tính
+    status ENUM('Pending', 'Matched', 'Discrepancy') DEFAULT 'Pending', -- Trạng thái khớp hay lệch
+    FOREIGN KEY (audit_id) REFERENCES inventory_audits(id) ON DELETE CASCADE,
+    FOREIGN KEY (bin_id) REFERENCES bins(id) ON DELETE CASCADE,
+    FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE,
+    FOREIGN KEY (batch_id) REFERENCES batches(id) ON DELETE SET NULL
+);
+-- 1. Bảng Nhà cung cấp (suppliers): Quản lý danh sách đối tác cung cấp hàng hóa đầu vào
+CREATE TABLE suppliers (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(150) NOT NULL,                   -- Tên nhà cung cấp
+    phone VARCHAR(20),                            -- Số điện thoại liên hệ
+email VARCHAR(100),                           -- Email liên hệ
+    address VARCHAR(255),                         -- Địa chỉ nhà cung cấp
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 2. Bảng Đơn vị vận chuyển (shipping): Quản lý các hãng vận chuyển/shipper
+CREATE TABLE shippings (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,                   -- Tên đơn vị vận chuyển (Ví dụ: Giao Hàng Nhanh, Viettel Post...)
+    phone VARCHAR(20),                            -- Hotline hỗ trợ
+    contact_person VARCHAR(100),                  -- Người liên hệ phụ trách
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+-- ==========================================
+-- PHẦN QUẢN LÝ NHẬP KHO (INBOUND)
+-- ==========================================
+
+-- 1. Bảng đầu phiếu nhập kho
+CREATE TABLE inbound_receipts (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    receipt_code VARCHAR(50) UNIQUE NOT NULL,       -- Mã phiếu nhập (Ví dụ: INB-202609-001)
+    supplier_id INT NOT NULL,                       -- Thuộc nhà cung cấp nào (Khóa ngoại trỏ tới suppliers)
+    created_by INT NOT NULL,                        -- Nhân viên tạo phiếu (Khóa ngoại trỏ tới users)
+    status ENUM('Pending', 'Receiving', 'Completed', 'Cancelled') DEFAULT 'Pending', -- Trạng thái phiếu
+    note TEXT,                                      -- Ghi chú phiếu nhập
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (supplier_id) REFERENCES suppliers(id) ON DELETE RESTRICT,
+    FOREIGN KEY (created_by) REFERENCES users(id)
+);
+
+-- 2. Bảng chi tiết sản phẩm trong phiếu nhập kho
+CREATE TABLE inbound_details (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    receipt_id INT NOT NULL,                        -- Thuộc phiếu nhập nào
+    product_id INT NOT NULL,                        -- Sản phẩm nhập
+    batch_id INT NOT NULL,                          -- Lô hàng tương ứng (mã lô khi nhập)
+    expected_quantity INT NOT NULL,                 -- Số lượng dự kiến nhập
+    actual_quantity INT DEFAULT 0,                  -- Số lượng thực tế nhận được
+    FOREIGN KEY (receipt_id) REFERENCES inbound_receipts(id) ON DELETE CASCADE,
+    FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE,
+    FOREIGN KEY (batch_id) REFERENCES batches(id) ON DELETE CASCADE
+);
+
+-- ==========================================
+-- PHẦN QUẢN LÝ XUẤT HÀNG / GIAO HÀNG (OUTBOUND)
+-- ==========================================
+
+-- 3. Bảng đầu đơn hàng xuất / phiếu giao hàng
+CREATE TABLE outbound_orders (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    order_code VARCHAR(50) UNIQUE NOT NULL,         -- Mã đơn hàng/phiếu xuất (Ví dụ: OUT-202609-001)
+    customer_name VARCHAR(150),                     -- Tên khách hàng / Đối tác nhận
+shipping_id INT,                                -- Đơn vị vận chuyển (Khóa ngoại trỏ tới shippings)
+    tracking_code VARCHAR(100),                     -- Mã vận đơn của hãng vận chuyển
+    created_by INT NOT NULL,                        -- Nhân viên xử lý (Khóa ngoại trỏ tới users)
+    status ENUM('Pending', 'Allocated', 'Picking', 'Packing', 'Dispatched', 'Cancelled') DEFAULT 'Pending', -- Trạng thái đơn
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (shipping_id) REFERENCES shippings(id) ON DELETE SET NULL,
+    FOREIGN KEY (created_by) REFERENCES users(id)
+);
+
+-- 4. Bảng chi tiết sản phẩm trong đơn hàng xuất
+CREATE TABLE outbound_details (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    order_id INT NOT NULL,                          -- Thuộc đơn xuất nào
+    product_id INT NOT NULL,                        -- Sản phẩm xuất
+    ordered_quantity INT NOT NULL,                  -- Số lượng khách đặt
+    picked_quantity INT DEFAULT 0,                  -- Số lượng thực tế đã nhặt được
+    FOREIGN KEY (order_id) REFERENCES outbound_orders(id) ON DELETE CASCADE,
+    FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
+);
+-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
+-- Bảng quản lý nhiệm vụ lấy hàng giao cho nhân viên (Picker Tasks)
+CREATE TABLE picking_tasks (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    order_id INT NOT NULL,                          -- Thuộc đơn hàng xuất nào
+    order_detail_id INT NOT NULL,                   -- Thuộc dòng sản phẩm nào trong đơn hàng
+    product_id INT NOT NULL,                        -- Sản phẩm cần lấy
+    batch_id INT NOT NULL,                          -- Lấy từ lô nào
+    bin_id INT NOT NULL,                            -- Lấy tại ô vị trí cụ thể nào trong kho
+    assigned_to INT,                                -- Tài khoản nhân viên được giao task (trỏ tới users)
+    required_quantity INT NOT NULL,                 -- Số lượng cần lấy tại vị trí này
+    picked_quantity INT DEFAULT 0,                  -- Số lượng thực tế nhân viên quét/lấy được
+    status ENUM('Pending', 'Assigned', 'In_Progress', 'Completed', 'Short_Picked', 'Cancelled') DEFAULT 'Pending', -- Trạng thái task
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (order_id) REFERENCES outbound_orders(id) ON DELETE CASCADE,
+    FOREIGN KEY (order_detail_id) REFERENCES outbound_details(id) ON DELETE CASCADE,
+    FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE,
+    FOREIGN KEY (batch_id) REFERENCES batches(id) ON DELETE CASCADE,
+    FOREIGN KEY (bin_id) REFERENCES bins(id) ON DELETE CASCADE,
+    FOREIGN KEY (assigned_to) REFERENCES users(id) ON DELETE SET NULL
+);
+select*from picking_tasks;
+select*from outbound_orders;
+select*from outbound_details;
+-- Bảng quản lý nhiệm vụ cất hàng vào vị trí (Putaway Tasks)
+CREATE TABLE putaway_tasks (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    receipt_id INT NOT NULL,                        -- Thuộc phiếu nhập kho nào
+    receipt_detail_id INT NOT NULL,                 -- Thuộc dòng chi tiết phiếu nhập nào
+    product_id INT NOT NULL,                        -- Sản phẩm cần cất
+    batch_id INT NOT NULL,                          -- Lô hàng tương ứng
+    suggested_bin_id INT,                           -- Ô vị trí trống do hệ thống tự động gợi ý
+    actual_bin_id INT,                              -- Ô vị trí thực tế nhân viên chọn/quét để cất vào
+    assigned_to INT,                                -- Tài khoản nhân viên được giao task (trỏ tới users)
+    quantity INT NOT NULL,                          -- Số lượng cần cất
+    status ENUM('Pending', 'Assigned', 'In_Progress', 'Completed', 'Cancelled') DEFAULT 'Pending', -- Trạng thái task
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (receipt_id) REFERENCES inbound_receipts(id) ON DELETE CASCADE,
+    FOREIGN KEY (receipt_detail_id) REFERENCES inbound_details(id) ON DELETE CASCADE,
+    FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE,
+    FOREIGN KEY (batch_id) REFERENCES batches(id) ON DELETE CASCADE,
+    FOREIGN KEY (suggested_bin_id) REFERENCES bins(id) ON DELETE SET NULL,
+    FOREIGN KEY (actual_bin_id) REFERENCES bins(id) ON DELETE SET NULL,
+    FOREIGN KEY (assigned_to) REFERENCES users(id) ON DELETE SET NULL
+);
+
+
+INSERT INTO warehouses (id, name, address) VALUES
+(1, 'Kho tổng Hưng Yên', 'Khu công nghiệp Phố Nối A, Hưng Yên'),
+(2, 'Kho phụ tùng miền Bắc', 'Đường Nguyễn Văn Linh, Long Biên, Hà Nội');
+
+-- =====================================================================
+-- BƯỚC 2: DANH MỤC & SẢN PHẨM / LÔ HÀNG (Categories -> Products -> Batches)
+-- =====================================================================
+INSERT INTO zones (id, warehouse_id, name) VALUES
+(1, 1, 'Khu A'),
+(2, 1, 'Khu B');
+select*from zones;
+
+-- =====================================================================
+-- 3. RACKS (Dãy kệ: A1-A5 và B1-B5)
+-- =====================================================================
+INSERT INTO racks (id, zone_id, name) VALUES
+-- Khu A (Racks 1 đến 5)
+(1, 1, 'Kệ A1'), (2, 1, 'Kệ A2'), (3, 1, 'Kệ A3'), (4, 1, 'Kệ A4'), (5, 1, 'Kệ A5'),
+-- Khu B (Racks 6 đến 10)
+(6, 2, 'Kệ B1'), (7, 2, 'Kệ B2'), (8, 2, 'Kệ B3'), (9, 2, 'Kệ B4'), (10, 2, 'Kệ B5');
+
+-- =====================================================================
+-- 4. SHELVES (Tầng kệ: Mỗi kệ có 2 tầng -> Tổng cộng 20 tầng)
+-- =====================================================================
+INSERT INTO shelves (id, rack_id, name) VALUES
+-- Kệ A1 (rack_id = 1)
+(1, 1, 'Tầng 1'), (2, 1, 'Tầng 2'),
+-- Kệ A2 (rack_id = 2)
+(3, 2, 'Tầng 1'), (4, 2, 'Tầng 2'),
+-- Kệ A3 (rack_id = 3)
+(5, 3, 'Tầng 1'), (6, 3, 'Tầng 2'),
+-- Kệ A4 (rack_id = 4)
+(7, 4, 'Tầng 1'), (8, 4, 'Tầng 2'),
+-- Kệ A5 (rack_id = 5)
+(9, 5, 'Tầng 1'), (10, 5, 'Tầng 2'),
+-- Kệ B1 (rack_id = 6)
+(11, 6, 'Tầng 1'), (12, 6, 'Tầng 2'),
+-- Kệ B2 (rack_id = 7)
+(13, 7, 'Tầng 1'), (14, 7, 'Tầng 2'),
+-- Kệ B3 (rack_id = 8)
+(15, 8, 'Tầng 1'), (16, 8, 'Tầng 2'),
+-- Kệ B4 (rack_id = 9)
+(17, 9, 'Tầng 1'), (18, 9, 'Tầng 2'),
+-- Kệ B5 (rack_id = 10)
+(19, 10, 'Tầng 1'), (20, 10, 'Tầng 2');
+
+-- =====================================================================
+-- 5. BINS & LOCATIONS (Tự động sinh 200 vị trí kho)
+-- Định dạng mã vị trí: [Kệ]-[Vị trí]-[Tầng] (Ví dụ: A1-7-1)
+-- =====================================================================
+
+-- --- KỆ A1 (shelf_id: 1, 2) ---
+INSERT INTO bins (shelf_id, name) VALUES 
+(1, 'Bin-A1-01'), (1, 'Bin-A1-02'), (1, 'Bin-A1-03'), (1, 'Bin-A1-04'), (1, 'Bin-A1-05'), (1, 'Bin-A1-06'), (1, 'Bin-A1-07'), (1, 'Bin-A1-08'), (1, 'Bin-A1-09'), (1, 'Bin-A1-10'),
+(2, 'Bin-A1-01'), (2, 'Bin-A1-02'), (2, 'Bin-A1-03'), (2, 'Bin-A1-04'), (2, 'Bin-A1-05'), (2, 'Bin-A1-06'), (2, 'Bin-A1-07'), (2, 'Bin-A1-08'), (2, 'Bin-A1-09'), (2, 'Bin-A1-10');
+
+-- --- KỆ A2 (shelf_id: 3, 4) ---
+INSERT INTO bins (shelf_id, name) VALUES 
+(3, 'Bin-A2-01'), (3, 'Bin-A2-02'), (3, 'Bin-A2-03'), (3, 'Bin-A2-04'), (3, 'Bin-A2-05'), (3, 'Bin-A2-06'), (3, 'Bin-A2-07'), (3, 'Bin-A2-08'), (3, 'Bin-A2-09'), (3, 'Bin-A2-10'),
+(4, 'Bin-A2-01'), (4, 'Bin-A2-02'), (4, 'Bin-A2-03'), (4, 'Bin-A2-04'), (4, 'Bin-A2-05'), (4, 'Bin-A2-06'), (4, 'Bin-A2-07'), (4, 'Bin-A2-08'), (4, 'Bin-A2-09'), (4, 'Bin-A2-10');
+
+-- --- KỆ A3 (shelf_id: 5, 6) ---
+INSERT INTO bins (shelf_id, name) VALUES 
+(5, 'Bin-A3-01'), (5, 'Bin-A3-02'), (5, 'Bin-A3-03'), (5, 'Bin-A3-04'), (5, 'Bin-A3-05'), (5, 'Bin-A3-06'), (5, 'Bin-A3-07'), (5, 'Bin-A3-08'), (5, 'Bin-A3-09'), (5, 'Bin-A3-10'),
+(6, 'Bin-A3-01'), (6, 'Bin-A3-02'), (6, 'Bin-A3-03'), (6, 'Bin-A3-04'), (6, 'Bin-A3-05'), (6, 'Bin-A3-06'), (6, 'Bin-A3-07'), (6, 'Bin-A3-08'), (6, 'Bin-A3-09'), (6, 'Bin-A3-10');
+
+-- --- KỆ A4 (shelf_id: 7, 8) ---
+INSERT INTO bins (shelf_id, name) VALUES 
+(7, 'Bin-A4-01'), (7, 'Bin-A4-02'), (7, 'Bin-A4-03'), (7, 'Bin-A4-04'), (7, 'Bin-A4-05'), (7, 'Bin-A4-06'), (7, 'Bin-A4-07'), (7, 'Bin-A4-08'), (7, 'Bin-A4-09'), (7, 'Bin-A4-10'),
+(8, 'Bin-A4-01'), (8, 'Bin-A4-02'), (8, 'Bin-A4-03'), (8, 'Bin-A4-04'), (8, 'Bin-A4-05'), (8, 'Bin-A4-06'), (8, 'Bin-A4-07'), (8, 'Bin-A4-08'), (8, 'Bin-A4-09'), (8, 'Bin-A4-10');
+
+-- --- KỆ A5 (shelf_id: 9, 10) ---
+INSERT INTO bins (shelf_id, name) VALUES 
+(9, 'Bin-A5-01'), (9, 'Bin-A5-02'), (9, 'Bin-A5-03'), (9, 'Bin-A5-04'), (9, 'Bin-A5-05'), (9, 'Bin-A5-06'), (9, 'Bin-A5-07'), (9, 'Bin-A5-08'), (9, 'Bin-A5-09'), (9, 'Bin-A5-10'),
+(10, 'Bin-A5-01'), (10, 'Bin-A5-02'), (10, 'Bin-A5-03'), (10, 'Bin-A5-04'), (10, 'Bin-A5-05'), (10, 'Bin-A5-06'), (10, 'Bin-A5-07'), (10, 'Bin-A5-08'), (10, 'Bin-A5-09'), (10, 'Bin-A5-10');
+
+-- --- KỆ B1 (shelf_id: 11, 12) ---
+INSERT INTO bins (shelf_id, name) VALUES 
+(11, 'Bin-B1-01'), (11, 'Bin-B1-02'), (11, 'Bin-B1-03'), (11, 'Bin-B1-04'), (11, 'Bin-B1-05'), (11, 'Bin-B1-06'), (11, 'Bin-B1-07'), (11, 'Bin-B1-08'), (11, 'Bin-B1-09'), (11, 'Bin-B1-10'),
+(12, 'Bin-B1-01'), (12, 'Bin-B1-02'), (12, 'Bin-B1-03'), (12, 'Bin-B1-04'), (12, 'Bin-B1-05'), (12, 'Bin-B1-06'), (12, 'Bin-B1-07'), (12, 'Bin-B1-08'), (12, 'Bin-B1-09'), (12, 'Bin-B1-10');
+
+-- --- KỆ B2 (shelf_id: 13, 14) ---
+INSERT INTO bins (shelf_id, name) VALUES 
+(13, 'Bin-B2-01'), (13, 'Bin-B2-02'), (13, 'Bin-B2-03'), (13, 'Bin-B2-04'), (13, 'Bin-B2-05'), (13, 'Bin-B2-06'), (13, 'Bin-B2-07'), (13, 'Bin-B2-08'), (13, 'Bin-B2-09'), (13, 'Bin-B2-10'),
+(14, 'Bin-B2-01'), (14, 'Bin-B2-02'), (14, 'Bin-B2-03'), (14, 'Bin-B2-04'), (14, 'Bin-B2-05'), (14, 'Bin-B2-06'), (14, 'Bin-B2-07'), (14, 'Bin-B2-08'), (14, 'Bin-B2-09'), (14, 'Bin-B2-10');
+
+-- --- KỆ B3 (shelf_id: 15, 16) ---
+INSERT INTO bins (shelf_id, name) VALUES 
+(15, 'Bin-B3-01'), (15, 'Bin-B3-02'), (15, 'Bin-B3-03'), (15, 'Bin-B3-04'), (15, 'Bin-B3-05'), (15, 'Bin-B3-06'), (15, 'Bin-B3-07'), (15, 'Bin-B3-08'), (15, 'Bin-B3-09'), (15, 'Bin-B3-10'),
+(16, 'Bin-B3-01'), (16, 'Bin-B3-02'), (16, 'Bin-B3-03'), (16, 'Bin-B3-04'), (16, 'Bin-B3-05'), (16, 'Bin-B3-06'), (16, 'Bin-B3-07'), (16, 'Bin-B3-08'), (16, 'Bin-B3-09'), (16, 'Bin-B3-10');
+
+-- --- KỆ B4 (shelf_id: 17, 18) ---
+INSERT INTO bins (shelf_id, name) VALUES
+(17, 'Bin-B4-01'), (17, 'Bin-B4-02'), (17, 'Bin-B4-03'), (17, 'Bin-B4-04'), (17, 'Bin-B4-05'), (17, 'Bin-B4-06'), (17, 'Bin-B4-07'), (17, 'Bin-B4-08'), (17, 'Bin-B4-09'), (17, 'Bin-B4-10'),
+(18, 'Bin-B4-01'), (18, 'Bin-B4-02'), (18, 'Bin-B4-03'), (18, 'Bin-B4-04'), (18, 'Bin-B4-05'), (18, 'Bin-B4-06'), (18, 'Bin-B4-07'), (18, 'Bin-B4-08'), (18, 'Bin-B4-09'), (18, 'Bin-B4-10');
+
+-- --- KỆ B5 (shelf_id: 19, 20) ---
+INSERT INTO bins (shelf_id, name) VALUES 
+(19, 'Bin-B5-01'), (19, 'Bin-B5-02'), (19, 'Bin-B5-03'), (19, 'Bin-B5-04'), (19, 'Bin-B5-05'), (19, 'Bin-B5-06'), (19, 'Bin-B5-07'), (19, 'Bin-B5-08'), (19, 'Bin-B5-09'), (19, 'Bin-B5-10'),
+(20, 'Bin-B5-01'), (20, 'Bin-B5-02'), (20, 'Bin-B5-03'), (20, 'Bin-B5-04'), (20, 'Bin-B5-05'), (20, 'Bin-B5-06'), (20, 'Bin-B5-07'), (20, 'Bin-B5-08'), (20, 'Bin-B5-09'), (20, 'Bin-B5-10');
+
+
+-- =====================================================================
+-- 6. TỰ ĐỘNG SINH BẢNG LOCATIONS DỰA TRÊN CÁC BINS VỪA TẠO
+-- =====================================================================
+INSERT INTO locations (bin_id, code, description)
+SELECT 
+    b.id,
+    CONCAT(
+        SUBSTRING_INDEX(SUBSTRING_INDEX(r.name, ' ', -1), 'Kệ ', -1), 
+        '-', 
+        CAST(SUBSTRING_INDEX(b.name, '-', -1) AS UNSIGNED), 
+        '-', 
+        SUBSTRING_INDEX(s.name, ' ', -1)
+    ),
+    CONCAT('Vị trí ', r.name, ', ô ', b.name, ', ', s.name)
+FROM bins b
+JOIN shelves s ON b.shelf_id = s.id
+JOIN racks r ON s.rack_id = r.id;
+
+
+
+INSERT INTO categories (id, name, description) VALUES
+(1, 'Linh kiện điện tử', 'Các loại vi điều khiển, cảm biến, điện trở, tụ điện và mạch điện tử'),
+(2, 'Phụ tùng cơ khí', 'Bulieu, ốc vít, vòng bi, đai ốc và các chi tiết cơ khí lắp ráp'),
+(3, 'Dụng cụ & Vật tư', 'Dụng cụ đo đạc, kìm, tua vít, băng dính và vật tư phụ trợ kho');
+
+
+-- =====================================================================
+-- 2. PRODUCTS (Sản phẩm / SKU - Mỗi loại 5 sản phẩm -> Tổng 15 sản phẩm)
+-- =====================================================================
+INSERT INTO products (sku, name, category_id, unit, min_stock_level) VALUES
+-- Nhóm 1: Linh kiện điện tử (5 sản phẩm)
+('SKU-EL-001', 'Vi điều khiển Arduino Uno R3', 1, 'cái', 10),
+('SKU-EL-002', 'Cảm biến khoảng cách HC-SR04', 1, 'cái', 15),
+('SKU-EL-003', 'Điện trở 1/4W 220 Ohm', 1, 'hộp', 20),
+('SKU-EL-004', 'Tụ gốm 104 (100nF)', 1, 'hộp', 20),
+('SKU-EL-005', 'Màn hình LCD 1602 I2C', 1, 'cái', 8),
+
+-- Nhóm 2: Phụ tùng cơ khí (5 sản phẩm)
+('SKU-ME-001', 'Bulong M6x30 inox', 2, 'túi', 10),
+('SKU-ME-002', 'Đai ốc M6 khóa ren', 2, 'túi', 10),
+('SKU-ME-003', 'Vòng bi bạc đạn 608ZZ', 2, 'cái', 12),
+('SKU-ME-004', 'Lò xo nén thép đàn hồi', 2, 'cái', 15),
+('SKU-ME-005', 'Thanh nhôm định hình 2020', 2, 'thanh', 5),
+
+-- Nhóm 3: Dụng cụ & Vật tư (5 sản phẩm)
+('SKU-TO-001', 'Kìm cắt điện đa năng', 3, 'cái', 5),
+('SKU-TO-002', 'Tua vít 2 đầu cách điện', 3, 'cái', 5),
+('SKU-TO-003', 'Băng dính điện Nano chịu nhiệt', 3, 'cuộn', 25),
+('SKU-TO-004', 'Thước dây cuộn thép 5m', 3, 'cái', 5),
+('SKU-TO-005', 'Thiếc hàn điện tử 0.8mm', 3, 'cuộn', 10);
+
+
+-- =====================================================================
+-- 3. LIÊN KẾT TỒN KHO / VỊ TRÍ (Gán sản phẩm vào các ô đầu tiên của Kệ A1 đến A5)
+-- Giả sử hệ thống quản lý tồn kho của bạn có bảng `inventory` hoặc `product_locations` 
+-- để lưu sản phẩm nào nằm ở vị trí (location_id) nào. Dưới đây là bảng mẫu phổ biến:
+-- =====================================================================
+
+-- Ví dụ: Nếu cơ sở dữ liệu của bạn có bảng `inventories` (hoặc `stock_locations`)
+-- Dưới đây ta phân bổ 15 sản phẩm vào đúng các vị trí đầu tiên của các kệ A1, A2, A3, A4, A5:
+-- Kệ A1 (locations từ id 1 trở đi tương ứng với A1-1-1, A1-2-1...)
+
+CREATE TABLE IF NOT EXISTS inventories (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    product_id INT,
+    location_id INT,
+    quantity INT DEFAULT 0,
+    FOREIGN KEY (product_id) REFERENCES products(id),
+    FOREIGN KEY (location_id) REFERENCES locations(id)
+);
+-- Đưa 15 sản phẩm vào các vị trí đầu tiên của khu A (location_id từ 1 đến 15 ứng với các ô đầu của dãy kệ A1 -> A5)
+INSERT INTO inventories (product_id, location_id, quantity) VALUES 
+(1, 1, 50),   -- SKU-EL-001 nằm ở vị trí A1-1-1
+(2, 2, 80),   -- SKU-EL-002 nằm ở vị trí A1-2-1
+(3, 3, 200),  -- SKU-EL-003 nằm ở vị trí A1-3-1
+(4, 4, 300),  -- SKU-EL-004 nằm ở vị trí A1-4-1
+(5, 5, 40),   -- SKU-EL-005 nằm ở vị trí A1-5-1
+(6, 21, 150), -- SKU-ME-001 nằm ở vị trí đầu của kệ A2 (A2-1-1)
+(7, 22, 150), -- SKU-ME-002 nằm ở vị trí A2-2-1
+(8, 23, 60),  -- SKU-ME-003 nằm ở vị trí A2-3-1
+(9, 24, 90),  -- SKU-ME-004 nằm ở vị trí A2-4-1
+(10, 25, 25), -- SKU-ME-005 nằm ở vị trí A2-5-1
+(11, 41, 30), -- SKU-TO-001 nằm ở vị trí đầu của kệ A3 (A3-1-1)
+(12, 42, 30), -- SKU-TO-002 nằm ở vị trí A3-2-1
+(13, 43, 100),-- SKU-TO-003 nằm ở vị trí A3-3-1
+(14, 44, 20), -- SKU-TO-004 nằm ở vị trí A3-4-1
+(15, 45, 50); -- SKU-TO-005 nằm ở vị trí A3-5-1
+
+
+
+
+INSERT INTO users (username, password, full_name, role) VALUES
+('admin_kho', '123', 'Nguyễn Văn Quản Trị', 'admin'),
+('manager_a', '123', 'Trần Thị Quản Lý', 'manager'),
+('staff_kho1', '123', 'Lê Văn Nhặt Hàng', 'staff'),
+('staff_kho2', '123', 'Phạm Thị Đóng Gói', 'staff'),
+('staff_nhapkho', '123', 'Hoàng Văn Cất Hàng', 'staff');
+
+
+-- =====================================================================
+-- 2. BATCHES (Lô hàng - 6 bản ghi cho các sản phẩm 1 tới 6)
+-- =====================================================================
+INSERT INTO batches (batch_code, product_id, mfg_date, exp_date) VALUES
+('LOT-202609-01', 1, '2026-01-10', '2029-01-10'),
+('LOT-202609-02', 2, '2026-02-15', '2029-02-15'),
+('LOT-202609-03', 3, '2026-03-01', '2029-02-15'),
+('LOT-202609-04', 4, '2026-03-10', '2029-02-15'),
+('LOT-202609-05', 5, '2026-04-05', '2028-04-05'),
+('LOT-202609-06', 6, '2026-05-20', '2029-02-15');
+
+
+-- =====================================================================
+-- 3. INVENTORY (Cập nhật tồn kho theo lô & ô tương ứng - 6 bản ghi)
+-- =====================================================================
+INSERT INTO inventory (product_id, bin_id, batch_id, quantity) VALUES
+(1, 1, 1, 50),   -- Sản phẩm 1 tại bin 1 (A1-1-01)
+(2, 2, 2, 80),   -- Sản phẩm 2 tại bin 2 (A1-1-02)
+(3, 3, 3, 200),  -- Sản phẩm 3 tại bin 3 (A1-1-03)
+(4, 4, 4, 300),  -- Sản phẩm 4 tại bin 4 (A1-1-04)
+(5, 5, 5, 40),   -- Sản phẩm 5 tại bin 5 (A1-1-05)
+(6, 21, 6, 150); -- Sản phẩm 6 tại bin 21 (A2-1-01)
+
+
+-- =====================================================================
+-- 4. SUPPLIERS (Nhà cung cấp - 5 bản ghi)
+-- =====================================================================
+INSERT INTO suppliers (name, phone, email, address) VALUES
+('Công ty TNHH Linh Kiện Điện Tử ABC', '0901234567', 'contact@abc-tech.vn', 'Hà Nội'),
+('Tập đoàn Cơ Khí Chính Xác XYZ', '0918888999', 'sales@xyz-mechanic.com', 'Hưng Yên'),
+('Công ty Thiết Bị Công Nghiệp Miền Bắc', '0983334444', 'info@mienbac-equip.vn', 'Bắc Ninh'),
+('Tổng kho Vật Tư Phụ Trợ Toàn Cầu', '0975556667', 'support@globalparts.vn', 'Hải Phòng'),
+('Cơ sở Phụ Tùng & Kim Khí Minh Phát', '0932221118', 'minhphat@gmail.com', 'Nam Định');
+
+
+-- =====================================================================
+-- 5. SHIPPINGS (Đơn vị vận chuyển - 5 bản ghi)
+-- =====================================================================
+INSERT INTO shippings (name, phone, contact_person) VALUES
+('Giao Hàng Nhanh (GHN)', '1900636677', 'Nguyễn Văn A (Quản lý khu vực)'),
+('Viettel Post', '19008095', 'Trần Thị B'),
+('J&T Express', '19001088', 'Lê Văn C'),
+('SPX Express (Shopee Xpress)', '19001221', 'Phạm Thị D'),
+('Ninja Van', '1900636743', 'Hoàng Văn E');
+
+
+-- =====================================================================
+-- 6. INBOUND_RECEIPTS (Phiếu nhập kho - 5 bản ghi)
+-- =====================================================================
+INSERT INTO inbound_receipts (receipt_code, supplier_id, created_by, status, note) VALUES
+('INB-202609-001', 1, 5, 'Completed', 'Nhập lô linh kiện điện tử đợt 1 tháng 9'),
+('INB-202609-002', 2, 5, 'Completed', 'Nhập bu lông và phụ tùng cơ khí'),
+('INB-202609-003', 3, 5, 'Receiving', 'Nhập dụng cụ cầm tay bổ sung'),
+('INB-202609-004', 4, 1, 'Pending', 'Đặt hàng vật tư tiêu hao kho'),
+('INB-202609-005', 5, 2, 'Pending', 'Nhập phụ tùng thay thế định kỳ');
+
+
+-- =====================================================================
+-- 7. INBOUND_DETAILS (Chi tiết phiếu nhập - 6 bản ghi)
+-- =====================================================================
+INSERT INTO inbound_details (receipt_id, product_id, batch_id, expected_quantity, actual_quantity) VALUES
+(1, 1, 1, 50, 50),
+(1, 2, 2, 80, 80),
+(2, 6, 6, 150, 150),
+(2, 7, 2, 150, 148), -- Có hao hụt nhẹ thực tế
+(3, 11, 3, 30, 30),
+(3, 12, 4, 30, 30);
+
+
+-- =====================================================================
+-- 8. OUTBOUND_ORDERS (Đơn hàng xuất kho - 5 bản ghi)
+-- =====================================================================
+INSERT INTO outbound_orders (order_code, customer_name, shipping_id, tracking_code, created_by, status) VALUES
+('OUT-202609-001', 'Công ty Cổ phần Công nghệ FPT', 1, 'GHN-HN-889923', 2, 'Dispatched'),
+('OUT-202609-002', 'Trung tâm R&D VinTech', 2, 'VTP-99281029', 3, 'Packing'),
+('OUT-202609-003', 'Công ty TNHH Giải pháp Tự động hóa', 3, 'JT-556748291', 3, 'Picking'),
+('OUT-202609-004', 'Đại học Bách Khoa Hà Nội', 4, 'SPX-VN-1102938', 4, 'Allocated'),
+('OUT-202609-005', 'Cửa hàng linh kiện điện tử Số 1', 5, 'NV-44829102', 1, 'Pending');
+
+
+-- =====================================================================
+-- 9. OUTBOUND_DETAILS (Chi tiết đơn hàng xuất - 6 bản ghi)
+-- =====================================================================
+INSERT INTO outbound_details (order_id, product_id, ordered_quantity, picked_quantity) VALUES
+(1, 1, 10, 10),
+(1, 2, 15, 15),
+(2, 6, 20, 20),
+(3, 11, 5, 5),
+(3, 12, 5, 5),
+(4, 3, 50, 0);
+
+
+-- =====================================================================
+-- 10. INVENTORY_AUDITS (Phiếu kiểm kê kho - 5 bản ghi)
+-- =====================================================================
+INSERT INTO inventory_audits (audit_code, created_by, status, note) VALUES
+('AUD-202609-001', 1, 'Completed', 'Kiểm kê định kỳ khu vực Kệ A1, A2'),
+('AUD-202609-002', 2, 'Completed', 'Kiểm kê đột xuất linh kiện điện tử'),
+('AUD-202609-003', 1, 'In_Progress', 'Kiểm kê tổng thể khu A'),
+('AUD-202609-004', 2, 'Draft', 'Lên kế hoạch kiểm kê quý 3'),
+('AUD-202609-005', 1, 'Cancelled', 'Hủy phiếu do thay đổi lịch vận hành');
+-- =====================================================================
+-- 11. AUDIT_DETAILS (Chi tiết kiểm kê kho - 6 bản ghi)
+-- =====================================================================
+INSERT INTO audit_details (audit_id, bin_id, product_id, batch_id, system_quantity, actual_quantity, status) VALUES
+(1, 1, 1, 1, 50, 50, 'Matched'),
+(1, 2, 2, 2, 80, 78, 'Discrepancy'), -- Lệch thiếu 2 sản phẩm
+(2, 3, 3, 3, 200, 200, 'Matched'),
+(2, 4, 4, 4, 300, 305, 'Discrepancy'), -- Lệch thừa 5 sản phẩm
+(3, 5, 5, 5, 40, 40, 'Matched'),
+(3, 21, 6, 6, 150, 150, 'Matched');
+
+
+-- =====================================================================
+-- 12. PICKING_TASKS (Nhiệm vụ lấy hàng - 5 bản ghi)
+-- =====================================================================
+INSERT INTO picking_tasks (order_id, order_detail_id, product_id, batch_id, bin_id, assigned_to, required_quantity, picked_quantity, status) VALUES
+(1, 1, 1, 1, 1, 3, 10, 10, 'Completed'),
+(1, 2, 2, 2, 2, 3, 15, 15, 'Completed'),
+(2, 3, 6, 6, 21, 3, 20, 20, 'Completed'),
+(3, 4, 11, 3, 41, 4, 5, 5, 'In_Progress'),
+(3, 5, 12, 4, 42, 4, 5, 0, 'Pending');
+
+
+-- =====================================================================
+-- 13. PUTAWAY_TASKS (Nhiệm vụ cất hàng - 5 bản ghi)
+-- =====================================================================
+INSERT INTO putaway_tasks (receipt_id, receipt_detail_id, product_id, batch_id, suggested_bin_id, actual_bin_id, assigned_to, quantity, status) VALUES
+(1, 1, 1, 1, 1, 1, 5, 50, 'Completed'),
+(1, 2, 2, 2, 2, 2, 5, 80, 'Completed'),
+(2, 3, 6, 6, 21, 21, 5, 150, 'Completed'),
+(2, 4, 7, 2, 22, 22, 5, 148, 'Completed'),
+(3, 5, 11, 3, 41, NULL, 5, 30, 'Pending');
+select * from putaway_tasks;
+

@@ -11,6 +11,8 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
+import apiClient from '@/services/api';
+import { useAuth } from '@/services/auth/AuthContext';
 
 type PutawayTaskItem = {
     order_id: number;
@@ -22,40 +24,47 @@ type PutawayTaskItem = {
     status: string;
 };
 
-const API_BASE_URL = 'http://10.181.145.212:3000/api';
-const CURRENT_PUSHER_ID = 3; // ID nhân viên đang đăng nhập (ví dụ: nhân viên ID = 1)
-
 export default function PushListScreen() {
     const [tasks, setTasks] = useState<PutawayTaskItem[]>([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const router = useRouter();
+    const { user, signOut } = useAuth();
 
-    const fetchTasks = () => {
-        setLoading(true);
-        fetch(`${API_BASE_URL}/pushList/list/${CURRENT_PUSHER_ID}`)
-            .then((res) => res.json())
-            .then((response) => {
-                if (response.success) {
-                    setTasks(response.data);
-                }
-                setLoading(false);
-                setRefreshing(false);
+    useEffect(() => {
+        let isActive = true;
+        if (!user?.id) return () => { isActive = false; };
+
+        Promise.resolve()
+            .then(() => apiClient.get(`/pushList/list/${user.id}`))
+            .then(({ data }) => {
+                if (isActive && data.success) setTasks(data.data);
             })
             .catch((error) => {
                 console.error('Lỗi kết nối API danh sách cất hàng:', error);
-                setLoading(false);
-                setRefreshing(false);
+            })
+            .finally(() => {
+                if (isActive) setLoading(false);
             });
-    };
 
-    useEffect(() => {
-        fetchTasks();
-    }, []);
+        return () => { isActive = false; };
+    }, [user?.id]);
 
     const onRefresh = () => {
         setRefreshing(true);
-        fetchTasks();
+        if (!user?.id) {
+            setRefreshing(false);
+            return;
+        }
+
+        apiClient.get(`/pushList/list/${user.id}`)
+            .then(({ data }) => {
+                if (data.success) setTasks(data.data);
+            })
+            .catch((error) => {
+                console.error('Lỗi kết nối API danh sách cất hàng:', error);
+            })
+            .finally(() => setRefreshing(false));
     };
 
     const renderItem = ({ item }: { item: PutawayTaskItem }) => (
@@ -101,8 +110,15 @@ export default function PushListScreen() {
     return (
         <SafeAreaView style={styles.safeArea}>
             <View style={styles.header}>
-                <Text style={styles.eyebrow}>DANH SÁCH NHIỆM VỤ</Text>
-                <Text style={styles.headerTitle}>Cất Hàng (Putaway)</Text>
+                <View style={styles.headerRow}>
+                    <View>
+                        <Text style={styles.eyebrow}>DANH SÁCH NHIỆM VỤ</Text>
+                        <Text style={styles.headerTitle}>Cất Hàng (Putaway)</Text>
+                    </View>
+                    <TouchableOpacity accessibilityRole="button" onPress={signOut}>
+                        <Text style={styles.signOutText}>Đăng xuất</Text>
+                    </TouchableOpacity>
+                </View>
             </View>
 
             {loading && !refreshing ? (
@@ -132,8 +148,10 @@ export default function PushListScreen() {
 const styles = StyleSheet.create({
     safeArea: { flex: 1, backgroundColor: '#F4F7F6' },
     header: { backgroundColor: '#112C3E', paddingHorizontal: 20, paddingTop: 18, paddingBottom: 22 },
+    headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 12 },
     eyebrow: { color: '#9CB0B8', fontSize: 10, fontWeight: '700', letterSpacing: 1.1 },
     headerTitle: { color: '#fff', fontSize: 24, fontWeight: '900', marginTop: 4 },
+    signOutText: { color: '#D5E4E5', fontSize: 13, fontWeight: '700' },
     listContainer: { padding: 16, paddingBottom: 30 },
     card: { backgroundColor: '#fff', borderRadius: 16, padding: 16, marginBottom: 16, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 2 },
     cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },

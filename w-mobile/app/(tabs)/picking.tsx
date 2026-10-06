@@ -24,7 +24,7 @@ type PickingItem = {
 // ⚠️ LƯU Ý: 
 // - Nếu chạy trên giả lập Android Studio: Dùng 'http://10.0.2.2:3000/api'
 // - Nếu chạy trên điện thoại thật (Expo Go): Dùng IP mạng LAN của máy tính (VD: 'http://192.168.1.x:3000/api')
-const API_BASE_URL = 'http://10.181.145.212:3000/api'; 
+const API_BASE_URL = 'http://192.168.1.17:3000/api'; 
 const TARGET_ORDER_ID = '1'; // ID của đơn xuất 'OUT-202609-001' trong cơ sở dữ liệu mẫu
 
 export default function PickingScreen() {

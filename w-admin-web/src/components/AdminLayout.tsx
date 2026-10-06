@@ -24,7 +24,14 @@ export default function AdminLayout() {
                     >
                         📦 Quản lý Cất Hàng
                     </Link>
-                    {/* Sau này có thể thêm các trang khác ở đây */}
+                    <Link 
+                        to="/user" 
+                        className={location.pathname === '/user' ? 'menu-item active' : 'menu-item'}
+                    >
+                        👤 Quản lý Tài khoản & Nhân viên
+                    </Link>
+                    {/* Sau này có thể thêm các trang khác ở đây */}         
+                  
                 </nav>
             </aside>
 

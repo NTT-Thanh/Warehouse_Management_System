@@ -11,13 +11,12 @@ export default function App() {
       <Routes>
         {/* Khung layout chung bọc bên ngoài */}
         <Route path="/" element={<AdminLayout />}>
-          {/* Trang mặc định (Tra cứu tồn kho) */}
-         
-
-<Route index element={<User />} />
-          
+          {/* Trang mặc định ( cứu tồn kho) */}
+          <Route index element={<InventorySearch />} />
+          {/* Trang quản lý user */}
+          <Route path="user" element={<div style={{padding: 20}}><User /><h2>Trang user</h2></div>} />   
           {/* Trang quản lý cất hàng (Ví dụ thêm vào sau) */}
-          <Route path="push-list" element={<div style={{padding: 20}}><h2>Trang Quản lý Cất Hàng (Đang phát triển...)</h2></div>} />
+          <Route path="push-list" element={<div style={{padding: 20}}><h2>Trang user</h2></div>} />
         </Route>
       </Routes>
     </BrowserRouter>

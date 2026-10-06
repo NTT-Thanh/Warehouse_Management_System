@@ -11,6 +11,8 @@ import {
     Text,
     View,
 } from 'react-native';
+import apiClient from '@/services/api';
+import { useAuth } from '@/services/auth/AuthContext';
 
 type PickingTaskSummary = {
     order_id: string | number;
@@ -21,32 +23,33 @@ type PickingTaskSummary = {
     status: string;
 };
 
-const API_BASE_URL = 'http://10.181.145.212:3000/api';
-const CURRENT_PICKER_ID = '3'; // ID tài khoản đăng nhập hiện tại (Ví dụ: nhân viên số 3)
-
 export default function PickingListScreen() {
     const [tasks, setTasks] = useState<PickingTaskSummary[]>([]);
     const [loading, setLoading] = useState(true);
     const router = useRouter();
+    const { user, signOut } = useAuth();
 
     useEffect(() => {
-        fetch(`${API_BASE_URL}/picking_task/tasks/picker/${CURRENT_PICKER_ID}`)
-            .then((res) => res.json())
-            .then((response) => {
-                if (response.success) {
-                    setTasks(response.data);
-                }
-                setLoading(false);
+        let isActive = true;
+        if (!user?.id) return () => { isActive = false; };
+
+        Promise.resolve()
+            .then(() => apiClient.get(`/picking_task/tasks/picker/${user.id}`))
+            .then(({ data }) => {
+                if (isActive && data.success) setTasks(data.data);
             })
             .catch((error) => {
                 console.error('Lỗi tải danh sách task:', error);
-                Alert.alert('Lỗi', 'Không thể kết nối đến máy chủ.');
-                setLoading(false);
+                if (isActive) Alert.alert('Lỗi', 'Không thể kết nối đến máy chủ.');
+            })
+            .finally(() => {
+                if (isActive) setLoading(false);
             });
-    }, []);
+
+        return () => { isActive = false; };
+    }, [user?.id]);
 
     const handleSelectTask = (orderId: string | number) => {
-        // Chuyển hướng sang màn hình picking và truyền orderId qua tham số đường dẫn (Query Params)
         router.push(`/picking?orderId=${orderId}`);
     };
 
@@ -62,8 +65,15 @@ export default function PickingListScreen() {
     return (
         <SafeAreaView style={styles.safeArea}>
             <View style={styles.header}>
-                <Text style={styles.eyebrow}>NHIỆM VỤ CỦA TÔI</Text>
-                <Text style={styles.headerTitle}>Danh sách đơn cần lấy</Text>
+                <View style={styles.headerRow}>
+                    <View>
+                        <Text style={styles.eyebrow}>NHIỆM VỤ CỦA TÔI</Text>
+                        <Text style={styles.headerTitle}>Danh sách đơn cần lấy</Text>
+                    </View>
+                    <Pressable accessibilityRole="button" onPress={signOut}>
+                        <Text style={styles.signOutText}>Đăng xuất</Text>
+                    </Pressable>
+                </View>
             </View>
 
             <FlatList
@@ -115,8 +125,10 @@ const styles = StyleSheet.create({
     centerContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#F4F7F6' },
     loadingText: { marginTop: 10, color: '#71848D', fontWeight: '600' },
     header: { backgroundColor: '#112C3E', paddingHorizontal: 20, paddingTop: 20, paddingBottom: 22 },
+    headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 12 },
     eyebrow: { color: '#9CB0B8', fontSize: 11, fontWeight: '700', letterSpacing: 1.2 },
     headerTitle: { color: '#fff', fontSize: 24, fontWeight: '800', marginTop: 4 },
+    signOutText: { color: '#D5E4E5', fontSize: 13, fontWeight: '700' },
     listContainer: { padding: 16, gap: 14 },
     taskCard: { backgroundColor: '#fff', borderRadius: 14, padding: 16, borderWidth: 1, borderColor: '#E2EBE8', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2, elevation: 2 },
     cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },

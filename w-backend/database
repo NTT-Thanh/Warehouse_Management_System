@@ -169,6 +169,8 @@ CREATE TABLE inbound_details (
     batch_id INT NOT NULL,                          -- Lô hàng tương ứng (mã lô khi nhập)
     expected_quantity INT NOT NULL,                 -- Số lượng dự kiến nhập
     actual_quantity INT DEFAULT 0,                  -- Số lượng thực tế nhận được
+    note TEXT,                                      -- Ghi chú thực nhận của dòng sản phẩm
+    confirmed TINYINT(1) NOT NULL DEFAULT 0,         -- Dòng đã được xác nhận nhận hàng
     FOREIGN KEY (receipt_id) REFERENCES inbound_receipts(id) ON DELETE CASCADE,
     FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE,
     FOREIGN KEY (batch_id) REFERENCES batches(id) ON DELETE CASCADE
@@ -584,4 +586,3 @@ INSERT INTO putaway_tasks (receipt_id, receipt_detail_id, product_id, batch_id, 
 (2, 4, 7, 2, 22, 22, 5, 148, 'Completed'),
 (3, 5, 11, 3, 41, NULL, 5, 30, 'Pending');
 select * from putaway_tasks;
-

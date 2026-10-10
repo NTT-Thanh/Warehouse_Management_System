@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { QRCodeSVG } from 'qrcode.react';
 import { dataService, type ApiRecord } from '../API/api';
 import { getApiErrorMessage } from '../API/errors';
 import {
@@ -67,6 +68,29 @@ export default function ProductsManagement() {
     const resetForm = () => {
         setForm(emptyForm);
         setEditingId(null);
+    };
+
+    const downloadQrCode = (containerId: string, sku: string) => {
+        const svg = document.getElementById(containerId)?.querySelector('svg');
+        if (!svg) {
+            setError('Không tìm thấy mã QR để tải xuống.');
+            return;
+        }
+
+        try {
+            const svgData = new XMLSerializer().serializeToString(svg);
+            const downloadUrl = URL.createObjectURL(new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' }));
+            const link = document.createElement('a');
+            link.href = downloadUrl;
+            link.download = `${sku}-qr.svg`;
+            document.body.append(link);
+            link.click();
+            link.remove();
+            window.setTimeout(() => URL.revokeObjectURL(downloadUrl), 1000);
+        } catch (downloadError) {
+            console.error('Không thể tải mã QR:', downloadError);
+            setError('Không thể tải mã QR. Vui lòng thử lại.');
+        }
     };
 
     const save = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -153,11 +177,28 @@ export default function ProductsManagement() {
             error=""
             submitLabel={editingId === null ? 'Thêm sản phẩm' : 'Lưu thay đổi'}
         />
-        <ManagementList title="Danh sách sản phẩm" count={filteredProducts.length} loading={loading} headers={['ID', 'SKU', 'Tên sản phẩm', 'Danh mục', 'Đơn vị', 'Tồn tối thiểu', 'Thao tác']} emptyMessage="Chưa có sản phẩm phù hợp.">
+        {form.sku.trim() && <section className="product-qr-preview" aria-label="Xem trước mã QR SKU">
+            <div id="product-qr-preview" className="product-qr-code">
+                <QRCodeSVG value={form.sku.trim().toUpperCase()} size={128} level="M" title={`Mã QR SKU ${form.sku.trim().toUpperCase()}`} />
+                <strong>{form.sku.trim().toUpperCase()}</strong>
+            </div>
+            <div className="product-qr-copy">
+                <h3>Mã QR cho SKU</h3>
+                <p>Mã QR chứa đúng chuỗi SKU để mobile Picking quét trực tiếp.</p>
+                <button type="button" onClick={() => downloadQrCode('product-qr-preview', form.sku.trim().toUpperCase())}>Tải mã QR (SVG)</button>
+            </div>
+        </section>}
+        <ManagementList title="Danh sách sản phẩm" count={filteredProducts.length} loading={loading} headers={['ID', 'SKU', 'Tên sản phẩm', 'Danh mục', 'Đơn vị', 'Tồn tối thiểu', 'Mã QR', 'Thao tác']} emptyMessage="Chưa có sản phẩm phù hợp.">
             {filteredProducts.map((product) => <tr key={product.id}>
                 <td>{product.id}</td><td className="management-primary">{product.sku}</td><td>{product.name}</td>
                 <td>{categories.find((category) => category.id === product.category_id)?.name ?? '—'}</td>
                 <td>{product.unit}</td><td>{product.min_stock_level}</td>
+                <td>
+                    <div className="product-qr-code product-qr-cell" id={`product-qr-${product.id}`}>
+                        <QRCodeSVG value={product.sku} size={72} level="M" title={`Mã QR SKU ${product.sku}`} />
+                        <button type="button" onClick={() => downloadQrCode(`product-qr-${product.id}`, product.sku)}>Tải SVG</button>
+                    </div>
+                </td>
                 <td><ManagementRowActions onEdit={() => edit(product)} onDelete={() => void remove(product)} /></td>
             </tr>)}
         </ManagementList>

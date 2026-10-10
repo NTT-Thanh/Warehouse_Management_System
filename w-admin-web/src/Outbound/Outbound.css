@@ -24,8 +24,7 @@
   white-space: nowrap;
 }
 
-.outbound-row-actions > button,
-.outbound-detail button {
+.outbound-row-actions > button {
   min-height: 27px;
   margin-right: 7px;
   padding: 0 8px;
@@ -36,25 +35,35 @@
   font-size: 10px;
 }
 
-.outbound-detail {
-  padding: 14px 17px;
-  border: 1px solid #e9edf2;
-  border-radius: 8px;
-  background: #fff;
-  color: #637084;
+.outbound-detail-modal {
+  width: min(720px, 100%);
+}
+
+.outbound-detail-lines {
+  padding: 4px 22px 14px;
+}
+
+.outbound-detail-lines h3 {
+  margin: 0 0 10px;
+  color: #26394a;
+  font-size: 12px;
+}
+
+.outbound-detail-lines p {
+  margin: 0;
+  padding: 12px 0;
+  color: #8490a0;
   font-size: 11px;
 }
 
-.outbound-detail > div {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  color: #26374a;
+.outbound-detail-lines .management-table-wrap {
+  border: 1px solid #edf0f3;
+  border-radius: 6px;
 }
 
-.outbound-detail ul {
-  margin-bottom: 0;
-  padding-left: 18px;
+.outbound-detail-lines th,
+.outbound-detail-lines td {
+  white-space: normal;
 }
 
 .outbound-modal {

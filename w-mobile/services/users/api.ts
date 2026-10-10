@@ -2,9 +2,7 @@ import apiClient from '../api';
 import type { AuthUser } from '../auth/AuthContext';
 
 type LoginResponse = {
-  success: boolean;
-  message?: string;
-  data: AuthUser;
+  user: AuthUser;
 };
 
 export async function loginUser(username: string, password: string) {
@@ -13,9 +11,5 @@ export async function loginUser(username: string, password: string) {
     password,
   });
 
-  if (!response.data.success) {
-    throw new Error(response.data.message || 'Đăng nhập thất bại.');
-  }
-
-  return response.data.data;
+  return response.data.user;
 }

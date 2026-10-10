@@ -4,6 +4,7 @@ const ctrl = require('../controllers/inbound_detailsController');
 router.get('/', ctrl.getAll);
 router.get('/:id', ctrl.getById);
 router.post('/', ctrl.create);
+router.post('/:id/confirm', ctrl.confirm);
 router.put('/:id', ctrl.update);
 router.delete('/:id', ctrl.delete);
 module.exports = router;

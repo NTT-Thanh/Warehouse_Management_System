@@ -10,8 +10,12 @@ import SupplierManagement from './Supplier/Supplier';
 import ProductsManagement from './Products/Products';
 import LocationsManagement from './Locations/Locations';
 import InboundManagement from './Inbound/Inbound';
+import InboundConfirmationManagement from './Inbound/InboundConfirmation';
 import OutboundManagement from './Outbound/Outbound';
 import PickingManagement from './Picking/Picking';
+import PickingDistribution from './Picking/PickingDistribution';
+import PackingManagement from './Picking/Packing';
+import OutboundDispatchManagement from './Outbound/Dispatch';
 import './App.css';
 
 type DashboardProduct = { id: number };
@@ -29,11 +33,15 @@ const emptyDashboard: DashboardData = { products: [], inbounds: [], outbounds: [
 const navItems = [
   { to: '/', icon: '▦', label: 'Tổng quan', group: 'VẬN HÀNH' },
   { to: '/inbound', icon: '↓', label: 'Lệnh nhập kho' },
+  { to: '/inbound-confirmation', icon: '✓', label: 'Xác nhận nhập kho' },
   { to: '/products', icon: '◈', label: 'Sản phẩm / SKU' },
   { to: '/inventory', icon: '▤', label: 'Tra cứu tồn kho' },
   { to: '/locations', icon: '⌖', label: 'Vị trí kho' },
   { to: '/outbound', icon: '↑', label: 'Lệnh xuất hàng', group: 'XUẤT HÀNG' },
   { to: '/picking', icon: '✓', label: 'Nhiệm vụ Picking' },
+  { to: '/picking-distribution', icon: '⇄', label: 'Phân bố nhiệm vụ' },
+  { to: '/packing', icon: '▣', label: 'Đóng gói' },
+  { to: '/dispatch', icon: '⇢', label: 'Xuất đơn' },
   { to: '/shipping', icon: '⇢', label: 'Đơn vị vận chuyển', group: 'ĐỐI TÁC' },
   { to: '/suppliers', icon: '◇', label: 'Nhà cung cấp' },
   { to: '/users', icon: '♙', label: 'Tài khoản' },
@@ -52,11 +60,15 @@ function AdminApp() {
   const pageTitles: Record<string, [string, string]> = {
     overview: ['Tổng quan kho hàng', 'Theo dõi dữ liệu và hoạt động kho từ cơ sở dữ liệu.'],
     inbound: ['Lệnh nhập kho', 'Quản lý phiếu nhập và nhà cung cấp.'],
+    'inbound-confirmation': ['Xác nhận nhập kho', 'Ghi nhận số lượng thực nhận và xác nhận từng sản phẩm trong phiếu nhập.'],
     products: ['Danh mục sản phẩm / SKU', 'Quản lý sản phẩm và định mức tồn kho.'],
     inventory: ['Tra cứu tồn kho', 'Tra cứu số lượng theo sản phẩm, vị trí và mã lô.'],
     locations: ['Cấu hình vị trí kho', 'Quản lý vị trí và ô chứa trong kho.'],
     outbound: ['Lệnh xuất hàng', 'Quản lý đơn xuất và thông tin giao hàng.'],
     picking: ['Nhiệm vụ Picking', 'Phân công nhân viên và giám sát tiến độ lấy hàng.'],
+    'picking-distribution': ['Phân bố nhiệm vụ', 'Chọn nhiệm vụ đang chờ và gán cho nhân viên phụ trách.'],
+    packing: ['Đóng gói', 'Xem các nhiệm vụ picking đã hoàn thành và xuất phiếu đóng gói.'],
+    dispatch: ['Xuất đơn', 'Xác nhận giao các đơn xuất có toàn bộ nhiệm vụ picking đã hoàn thành.'],
     users: ['Tài khoản & nhân viên', 'Quản lý người dùng và phân quyền truy cập.'],
     shipping: ['Đơn vị vận chuyển', 'Quản lý đối tác giao nhận và thông tin liên hệ.'],
     suppliers: ['Nhà cung cấp', 'Quản lý nhà cung cấp và thông tin liên hệ.'],
@@ -120,8 +132,6 @@ function AdminApp() {
     manager: 'Quản lý kho',
     staff: 'Nhân viên kho',
   };
-  const openTasks = dashboard.tasks.filter((task) => !['Completed', 'Cancelled'].includes(task.status)).length;
-
   return (
     <div className="admin-shell">
       <aside className="sidebar no-print">
@@ -136,7 +146,6 @@ function AdminApp() {
               {item.group && <div className="nav-group">{item.group}</div>}
               <Link className={`nav-link ${location.pathname === item.to ? 'active' : ''}`} to={item.to}>
                 <span className="nav-icon">{item.icon}</span><span>{item.label}</span>
-                {item.to === '/picking' && <span className="nav-count">{openTasks}</span>}
               </Link>
             </div>
           ))}
@@ -163,8 +172,12 @@ function AdminApp() {
           {page === 'products' && <ProductsManagement />}
           {page === 'locations' && <LocationsManagement />}
           {page === 'inbound' && <InboundManagement currentUser={currentUser} />}
+          {page === 'inbound-confirmation' && <InboundConfirmationManagement />}
           {page === 'outbound' && <OutboundManagement currentUser={currentUser} />}
           {page === 'picking' && <PickingManagement />}
+          {page === 'picking-distribution' && <PickingDistribution />}
+          {page === 'packing' && <PackingManagement />}
+          {page === 'dispatch' && <OutboundDispatchManagement />}
           {page === 'inventory' && <InventorySearch />}
           {page === 'shipping' && <ShippingManagement />}
           {page === 'suppliers' && <SupplierManagement />}

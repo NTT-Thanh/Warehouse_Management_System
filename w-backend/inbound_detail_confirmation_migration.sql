@@ -1,0 +1,3 @@
+ALTER TABLE inbound_details
+    ADD COLUMN note TEXT NULL,
+    ADD COLUMN confirmed TINYINT(1) NOT NULL DEFAULT 0;

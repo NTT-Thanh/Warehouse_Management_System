@@ -3,6 +3,7 @@ import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
     ActivityIndicator,
+    Alert,
     FlatList,
     RefreshControl,
     SafeAreaView,
@@ -39,9 +40,11 @@ export default function PushListScreen() {
             .then(() => apiClient.get(`/pushList/list/${user.id}`))
             .then(({ data }) => {
                 if (isActive && data.success) setTasks(data.data);
+                else if (isActive) throw new Error(data.message || 'Không thể tải danh sách nhiệm vụ cất hàng.');
             })
             .catch((error) => {
                 console.error('Lỗi kết nối API danh sách cất hàng:', error);
+                if (isActive) Alert.alert('Lỗi', 'Không thể tải danh sách nhiệm vụ cất hàng.');
             })
             .finally(() => {
                 if (isActive) setLoading(false);
@@ -51,6 +54,7 @@ export default function PushListScreen() {
     }, [user?.id]);
 
     const onRefresh = () => {
+        if (refreshing) return;
         setRefreshing(true);
         if (!user?.id) {
             setRefreshing(false);
@@ -60,9 +64,11 @@ export default function PushListScreen() {
         apiClient.get(`/pushList/list/${user.id}`)
             .then(({ data }) => {
                 if (data.success) setTasks(data.data);
+                else throw new Error(data.message || 'Không thể tải danh sách nhiệm vụ cất hàng.');
             })
             .catch((error) => {
                 console.error('Lỗi kết nối API danh sách cất hàng:', error);
+                Alert.alert('Lỗi', 'Không thể làm mới danh sách nhiệm vụ cất hàng.');
             })
             .finally(() => setRefreshing(false));
     };
@@ -115,9 +121,15 @@ export default function PushListScreen() {
                         <Text style={styles.eyebrow}>DANH SÁCH NHIỆM VỤ</Text>
                         <Text style={styles.headerTitle}>Cất Hàng (Putaway)</Text>
                     </View>
-                    <TouchableOpacity accessibilityRole="button" onPress={signOut}>
-                        <Text style={styles.signOutText}>Đăng xuất</Text>
-                    </TouchableOpacity>
+                    <View style={styles.headerActions}>
+                        <TouchableOpacity accessibilityRole="button" style={styles.refreshButton} onPress={onRefresh} disabled={refreshing}>
+                            <MaterialIcons name="refresh" size={17} color="#D5E4E5" />
+                            <Text style={styles.refreshText}>{refreshing ? 'Đang tải' : 'Làm mới'}</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity accessibilityRole="button" onPress={signOut}>
+                            <Text style={styles.signOutText}>Đăng xuất</Text>
+                        </TouchableOpacity>
+                    </View>
                 </View>
             </View>
 
@@ -149,6 +161,9 @@ const styles = StyleSheet.create({
     safeArea: { flex: 1, backgroundColor: '#F4F7F6' },
     header: { backgroundColor: '#112C3E', paddingHorizontal: 20, paddingTop: 18, paddingBottom: 22 },
     headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 12 },
+    headerActions: { flexDirection: 'row', alignItems: 'center', gap: 14 },
+    refreshButton: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingVertical: 6 },
+    refreshText: { color: '#D5E4E5', fontSize: 12, fontWeight: '700' },
     eyebrow: { color: '#9CB0B8', fontSize: 10, fontWeight: '700', letterSpacing: 1.1 },
     headerTitle: { color: '#fff', fontSize: 24, fontWeight: '900', marginTop: 4 },
     signOutText: { color: '#D5E4E5', fontSize: 13, fontWeight: '700' },

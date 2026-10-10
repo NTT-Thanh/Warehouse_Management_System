@@ -8,6 +8,88 @@
   flex: 1;
 }
 
+.picking-distribution {
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+  border: 1px solid #e9edf2;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.picking-distribution-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.picking-distribution-heading h3 {
+  margin: 0;
+  color: #25364a;
+  font-size: 14px;
+}
+
+.picking-distribution-heading p {
+  margin: 5px 0 0;
+  color: #7d8a9a;
+  font-size: 11px;
+}
+
+.picking-distribution-filters {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.picking-distribution-filters label {
+  display: grid;
+  gap: 6px;
+}
+
+.picking-distribution-filters label span {
+  color: #647286;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.picking-distribution-filters input,
+.picking-distribution-filters select {
+  min-width: 0;
+  height: 36px;
+  padding: 0 11px;
+  border: 1px solid #dfe5eb;
+  border-radius: 6px;
+  outline: none;
+  color: #344154;
+  background: #fff;
+  font: inherit;
+  font-size: 11px;
+}
+
+.picking-distribution-filters input:focus,
+.picking-distribution-filters select:focus {
+  border-color: #62b695;
+  box-shadow: 0 0 0 3px #1a9b6720;
+}
+
+.picking-distribution-list {
+  min-width: 0;
+}
+
+.picking-distribution-list th:first-child,
+.picking-distribution-list td:first-child {
+  width: 38px;
+  text-align: center;
+}
+
+.picking-distribution-list input[type='checkbox'] {
+  width: 15px;
+  height: 15px;
+  accent-color: #13845b;
+  cursor: pointer;
+}
+
 .picking-assign,
 .picking-row-actions > button {
   min-height: 34px;
@@ -38,6 +120,15 @@
 @media (max-width: 650px) {
   .picking-toolbar {
     align-items: stretch;
+    flex-direction: column;
+  }
+
+  .picking-distribution-filters {
+    grid-template-columns: 1fr;
+  }
+
+  .picking-distribution-heading {
+    align-items: flex-start;
     flex-direction: column;
   }
 }

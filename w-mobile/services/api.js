@@ -1,6 +1,6 @@
 import axios from 'axios';
 // Ví dụ: Lấy IP bằng lệnh `ipconfig` (Windows) hoặc `ifconfig` (Mac/Linux)
-const BASE_URL = 'http://192.168.1.17:3000/api'; 
+const BASE_URL = 'http://10.181.145.212:3000/api'; 
 
 const apiClient = axios.create({
   baseURL: BASE_URL,

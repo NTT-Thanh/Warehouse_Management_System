@@ -1,0 +1,25 @@
+.packing-detail-modal {
+  width: min(680px, 100%);
+}
+
+.packing-detail-button {
+  min-height: 28px;
+  padding: 0 10px;
+  border: 1px solid #13845b;
+  border-radius: 6px;
+  color: #13845b;
+  background: #fff;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.packing-detail-button:hover {
+  color: #fff;
+  background: #13845b;
+}
+
+.packing-detail-modal .button.primary {
+  border: 1px solid #13845b;
+  color: #fff;
+  background: #13845b;
+}

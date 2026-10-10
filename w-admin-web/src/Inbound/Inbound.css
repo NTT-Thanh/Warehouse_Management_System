@@ -71,7 +71,7 @@
 
 .inbound-line {
   display: grid;
-  grid-template-columns: 24px minmax(160px, 1.5fr) minmax(135px, 1.1fr) minmax(100px, 1fr) minmax(95px, .8fr) 30px;
+  grid-template-columns: 24px minmax(180px, 1.5fr) minmax(150px, 1.1fr) minmax(110px, 1fr) 30px;
   align-items: end;
   gap: 8px;
   padding: 10px;
@@ -140,6 +140,48 @@
 
 .inbound-form-error {
   margin: 0 22px 14px;
+}
+
+.inbound-confirmation-modal {
+  width: min(680px, 100%);
+}
+
+.inbound-confirmation-fields {
+  display: grid;
+  gap: 13px;
+  padding: 0 22px 18px;
+}
+
+.inbound-confirmation-fields label {
+  display: grid;
+  gap: 6px;
+}
+
+.inbound-confirmation-fields label span {
+  color: #647286;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.inbound-confirmation-fields input,
+.inbound-confirmation-fields textarea {
+  width: 100%;
+  padding: 9px 11px;
+  border: 1px solid #dfe5eb;
+  border-radius: 6px;
+  outline: none;
+  color: #344154;
+  background: #fff;
+  font: inherit;
+  font-size: 11px;
+}
+
+.inbound-confirmation-fields input {
+  height: 36px;
+}
+
+.inbound-confirmation-fields textarea {
+  resize: vertical;
 }
 
 @media (max-width: 850px) {

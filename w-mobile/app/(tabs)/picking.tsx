@@ -9,9 +9,11 @@ import {
     ScrollView,
     StyleSheet,
     Text,
+    TextInput,
     View,
 } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
+import { useAuth } from '@/services/auth/AuthContext';
 
 type PickingItem = {
     id: string;          // id của picking_task trong DB
@@ -19,14 +21,14 @@ type PickingItem = {
     sku: string;         // mã SKU
     required: number;    // số lượng cần lấy
     picked: number;      // số lượng đã lấy
+    order_code?: string;
+    targetLocation?: string;
 };
 
 // ⚠️ LƯU Ý: 
 // - Nếu chạy trên giả lập Android Studio: Dùng 'http://10.0.2.2:3000/api'
 // - Nếu chạy trên điện thoại thật (Expo Go): Dùng IP mạng LAN của máy tính (VD: 'http://192.168.1.x:3000/api')
-const API_BASE_URL = 'http://192.168.1.17:3000/api'; 
-const TARGET_ORDER_ID = '1'; // ID của đơn xuất 'OUT-202609-001' trong cơ sở dữ liệu mẫu
-
+const API_BASE_URL = 'http://10.181.145.212:3000/api';
 export default function PickingScreen() {
     const [items, setItems] = useState<PickingItem[]>([]);
     const [orderCode, setOrderCode] = useState('Đang tải...');
@@ -35,32 +37,39 @@ export default function PickingScreen() {
     const [status, setStatus] = useState<'Chờ xử lý' | 'Đang lấy' | 'Hoàn thành'>('Chờ xử lý');
     const [scannerOpen, setScannerOpen] = useState(false);
     const [scanMode, setScanMode] = useState<'location' | 'sku'>('location');
+    const [selectedItem, setSelectedItem] = useState<PickingItem | null>(null);
+    const [pickQuantity, setPickQuantity] = useState('1');
+    const [pickError, setPickError] = useState('');
+    const [savingPick, setSavingPick] = useState(false);
+    const [finishingTask, setFinishingTask] = useState(false);
     const [permission, requestPermission] = useCameraPermissions();
     const params = useLocalSearchParams();
-    // Lấy orderId từ trang danh sách truyền sang, nếu không có thì mặc định là '1'
-    const TARGET_ORDER_ID = params.orderId ? String(params.orderId) : '1';
-    // 1. Gọi API lấy danh sách sản phẩm cần pick khi màn hình vừa mở
+    const { user } = useAuth();
+    const targetTaskId = params.taskId ? String(params.taskId) : '';
+
     useEffect(() => {
-        fetch(`${API_BASE_URL}/picking/order/${TARGET_ORDER_ID}`)
-            .then((res) => res.json())
-            .then((response) => {
-                if (response.success && response.data.length > 0) {
-                    setItems(response.data);
-                    // Lấy mã đơn hàng (order_code) động từ phần tử đầu tiên của dữ liệu trả về
-                    if (response.data[0].order_code) {
-                        setOrderCode(response.data[0].order_code);
-                    }
-                    // Lấy mã vị trí ô chứa đầu tiên từ dữ liệu JOIN bên backend
-                    if (response.data[0].targetLocation) {
-                        setTargetLocation(response.data[0].targetLocation);
-                    }
-                }
+        let isActive = true;
+        if (!user?.id || !targetTaskId) return;
+
+        fetch(`${API_BASE_URL}/picking/task/${targetTaskId}?pickerId=${encodeURIComponent(String(user.id))}`)
+            .then(async (response) => {
+                const result = await response.json() as { success: boolean; data?: PickingItem[]; message?: string };
+                if (!response.ok || !result.success) throw new Error(result.message || 'Không thể tải nhiệm vụ picking.');
+                return result.data ?? [];
             })
-            .catch((error) => {
-                console.error('Lỗi kết nối API:', error);
-                Alert.alert('Lỗi', 'Không thể kết nối đến máy chủ backend.');
+            .then((assignedItems) => {
+                if (!isActive) return;
+                setItems(assignedItems);
+                if (assignedItems[0]?.order_code) setOrderCode(assignedItems[0].order_code);
+                if (assignedItems[0]?.targetLocation) setTargetLocation(assignedItems[0].targetLocation);
+            })
+            .catch((error: unknown) => {
+                console.error('Lỗi tải nhiệm vụ Picking:', error);
+                if (isActive) Alert.alert('Lỗi', error instanceof Error ? error.message : 'Không thể kết nối đến máy chủ backend.');
             });
-    }, [TARGET_ORDER_ID]);
+
+        return () => { isActive = false; };
+    }, [targetTaskId, user?.id]);
 
     const pickedTotal = items.reduce((total, item) => total + item.picked, 0);
     const requiredTotal = items.reduce((total, item) => total + item.required, 0);
@@ -72,16 +81,37 @@ export default function PickingScreen() {
         if (status === 'Chờ xử lý') setStatus('Đang lấy');
     };
 
-    // Hàm gửi API cập nhật số lượng đã lấy lên Database
-    const updateQuantityOnServer = async (taskId: string, newPickedQty: number) => {
+    const confirmPickedQuantity = async () => {
+        if (!selectedItem) return;
+        const quantityThisPick = Number(pickQuantity);
+        const remainingQuantity = selectedItem.required - selectedItem.picked;
+        if (!Number.isInteger(quantityThisPick) || quantityThisPick <= 0 || quantityThisPick > remainingQuantity) {
+            setPickError(`Nhập số nguyên từ 1 đến ${remainingQuantity}.`);
+            return;
+        }
+
+        const newPickedQty = selectedItem.picked + quantityThisPick;
+        setSavingPick(true);
+        setPickError('');
         try {
-            await fetch(`${API_BASE_URL}/picking/${taskId}`, {
+            const response = await fetch(`${API_BASE_URL}/picking/${selectedItem.id}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ picked_quantity: newPickedQty }),
+                body: JSON.stringify({ picked_quantity: newPickedQty, picker_id: user?.id }),
             });
+            const result = await response.json() as { success: boolean; message?: string };
+            if (!response.ok || !result.success) {
+                throw new Error(result.message || 'Không thể cập nhật số lượng đã lấy.');
+            }
+
+            setItems((currentItems) => currentItems.map((item) =>
+                item.id === selectedItem.id ? { ...item, picked: newPickedQty } : item));
+            setSelectedItem(null);
         } catch (error) {
-            console.error('Lỗi cập nhật DB:', error);
+            console.error('Lỗi cập nhật số lượng Picking:', error);
+            setPickError(error instanceof Error ? error.message : 'Không thể cập nhật số lượng đã lấy.');
+        } finally {
+            setSavingPick(false);
         }
     };
 
@@ -100,35 +130,44 @@ export default function PickingScreen() {
         }
 
         // Trường hợp 2: Quét mã SKU sản phẩm
-        const itemIndex = items.findIndex((item) => item.sku.toUpperCase() === data.toUpperCase());
-        if (itemIndex < 0) {
+        const matchingItems = items.filter((item) => item.sku.trim().toUpperCase() === data.trim().toUpperCase());
+        if (matchingItems.length === 0) {
             Alert.alert('SKU không thuộc đơn', `Không tìm thấy mã ${data} trong danh sách cần lấy của đơn này.`);
             return;
         }
 
-        const item = items[itemIndex];
-        if (item.picked >= item.required) {
-            Alert.alert('Đã đủ số lượng', `Sản phẩm ${item.name} đã đủ ${item.required} cái.`);
+        const item = matchingItems.find((candidate) => candidate.picked < candidate.required);
+        if (!item) {
+            Alert.alert('Đã đủ số lượng', `Các nhiệm vụ cho sản phẩm ${matchingItems[0].name} đã đủ số lượng cần lấy.`);
             return;
         }
 
-        const newPickedQty = item.picked + 1;
-
-        // Cập nhật State trên giao diện ngay lập tức cho mượt mà
-        setItems((currentItems) =>
-            currentItems.map((currentItem, index) =>
-                index === itemIndex ? { ...currentItem, picked: newPickedQty } : currentItem,
-            ),
-        );
-
-        // Đồng thời gọi API lưu vào MySQL
-        updateQuantityOnServer(item.id, newPickedQty);
+        setSelectedItem(item);
+        setPickQuantity('1');
+        setPickError('');
     };
 
-    const finishTask = () => {
-        if (!isComplete) return;
-        setStatus('Hoàn thành');
-        Alert.alert('Đã hoàn thành', 'Task lấy hàng đã được xác nhận hoàn tất.');
+    const finishTask = async () => {
+        if (!isComplete || !user?.id || finishingTask) return;
+        setFinishingTask(true);
+        try {
+            const response = await fetch(`${API_BASE_URL}/picking/${targetTaskId}/complete`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ picker_id: user.id }),
+            });
+            const result = await response.json() as { success: boolean; message?: string };
+            if (!response.ok || !result.success) {
+                throw new Error(result.message || 'Không thể hoàn thành task picking.');
+            }
+            setStatus('Hoàn thành');
+            Alert.alert('Đã hoàn thành', 'Task lấy hàng đã được xác nhận hoàn tất.');
+        } catch (error) {
+            console.error('Lỗi hoàn thành task Picking:', error);
+            Alert.alert('Lỗi', error instanceof Error ? error.message : 'Không thể hoàn thành task picking.');
+        } finally {
+            setFinishingTask(false);
+        }
     };
 
     return (
@@ -214,9 +253,9 @@ export default function PickingScreen() {
                         <Text style={styles.scanButtonHint}>{locationScanned ? 'Quét từng món đã lấy' : 'Xác nhận ô hàng trước'}</Text>
                     </View>
                 </Pressable>
-                <Pressable style={[styles.finishButton, !isComplete && styles.finishButtonDisabled]} onPress={finishTask} disabled={!isComplete}>
-                    <Text style={styles.finishButtonText}>Hoàn thành Task</Text>
-                    <MaterialIcons name="arrow-forward" size={21} color={isComplete ? '#112C3E' : '#9AA9B1'} />
+                <Pressable style={[styles.finishButton, (!isComplete || finishingTask || status === 'Hoàn thành') && styles.finishButtonDisabled]} onPress={() => void finishTask()} disabled={!isComplete || finishingTask || status === 'Hoàn thành'}>
+                    <Text style={styles.finishButtonText}>{finishingTask ? 'Đang hoàn thành...' : 'Hoàn thành Task'}</Text>
+                    <MaterialIcons name="arrow-forward" size={21} color={isComplete && status !== 'Hoàn thành' ? '#112C3E' : '#9AA9B1'} />
                 </Pressable>
             </View>
 
@@ -256,6 +295,39 @@ export default function PickingScreen() {
                             </View>
                         )}
                         <Text style={styles.scannerHint}>{scanMode === 'location' ? 'Đưa mã ô hàng vào khung quét' : 'Đưa mã SKU vào khung quét'}</Text>
+                    </View>
+                </View>
+            </Modal>
+
+            <Modal visible={selectedItem !== null} transparent animationType="fade" onRequestClose={() => setSelectedItem(null)}>
+                <View style={styles.pickModalBackdrop}>
+                    <View style={styles.pickModalCard}>
+                        <Text style={styles.pickModalEyebrow}>XÁC NHẬN SỐ LƯỢNG PICK</Text>
+                        <Text style={styles.pickModalTitle}>{selectedItem?.name}</Text>
+                        <Text style={styles.pickModalSku}>SKU: {selectedItem?.sku}</Text>
+                        <View style={styles.pickModalProgress}>
+                            <Text style={styles.pickModalProgressLabel}>Đã lấy / Cần lấy</Text>
+                            <Text style={styles.pickModalProgressValue}>{selectedItem?.picked ?? 0} / {selectedItem?.required ?? 0}</Text>
+                        </View>
+                        <Text style={styles.pickModalInputLabel}>Số lượng lấy lần này</Text>
+                        <TextInput
+                            style={styles.pickModalInput}
+                            value={pickQuantity}
+                            onChangeText={(value) => { setPickQuantity(value); setPickError(''); }}
+                            keyboardType="number-pad"
+                            inputMode="numeric"
+                            selectTextOnFocus
+                            accessibilityLabel="Số lượng lấy lần này"
+                        />
+                        {pickError ? <Text style={styles.pickModalError} accessibilityRole="alert">{pickError}</Text> : null}
+                        <View style={styles.pickModalActions}>
+                            <Pressable style={styles.pickCancelButton} onPress={() => setSelectedItem(null)} disabled={savingPick}>
+                                <Text style={styles.pickCancelText}>Hủy</Text>
+                            </Pressable>
+                            <Pressable style={[styles.pickConfirmButton, savingPick && styles.pickConfirmDisabled]} onPress={() => void confirmPickedQuantity()} disabled={savingPick}>
+                                <Text style={styles.pickConfirmText}>{savingPick ? 'Đang lưu...' : 'OK'}</Text>
+                            </Pressable>
+                        </View>
                     </View>
                 </View>
             </Modal>
@@ -329,4 +401,21 @@ const styles = StyleSheet.create({
     permissionText: { color: '#B8C9CE', fontSize: 14, textAlign: 'center', marginTop: 10, lineHeight: 21 },
     permissionButton: { backgroundColor: '#F7B84B', borderRadius: 12, paddingHorizontal: 20, paddingVertical: 14, marginTop: 22 },
     permissionButtonText: { color: '#112C3E', fontSize: 14, fontWeight: '900' },
+    pickModalBackdrop: { flex: 1, justifyContent: 'center', padding: 24, backgroundColor: '#07151C99' },
+    pickModalCard: { padding: 22, borderRadius: 18, backgroundColor: '#fff' },
+    pickModalEyebrow: { color: '#19866C', fontSize: 10, fontWeight: '900', letterSpacing: 1 },
+    pickModalTitle: { color: '#112C3E', fontSize: 19, fontWeight: '900', marginTop: 10 },
+    pickModalSku: { color: '#71848D', fontSize: 12, fontWeight: '700', marginTop: 4 },
+    pickModalProgress: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 14, marginTop: 16, borderTopWidth: 1, borderBottomWidth: 1, borderColor: '#EDF1F0' },
+    pickModalProgressLabel: { color: '#71848D', fontSize: 12, fontWeight: '600' },
+    pickModalProgressValue: { color: '#112C3E', fontSize: 16, fontWeight: '900' },
+    pickModalInputLabel: { color: '#344154', fontSize: 12, fontWeight: '800', marginTop: 16 },
+    pickModalInput: { height: 48, paddingHorizontal: 14, borderWidth: 1, borderColor: '#DCE6E4', borderRadius: 9, color: '#112C3E', fontSize: 18, fontWeight: '800', marginTop: 8 },
+    pickModalError: { color: '#B33434', fontSize: 11, marginTop: 8 },
+    pickModalActions: { flexDirection: 'row', justifyContent: 'flex-end', gap: 10, marginTop: 20 },
+    pickCancelButton: { minWidth: 90, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 16, paddingVertical: 12, borderRadius: 9, backgroundColor: '#EEF2F3' },
+    pickCancelText: { color: '#536174', fontSize: 13, fontWeight: '800' },
+    pickConfirmButton: { minWidth: 90, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 16, paddingVertical: 12, borderRadius: 9, backgroundColor: '#19866C' },
+    pickConfirmDisabled: { opacity: 0.65 },
+    pickConfirmText: { color: '#fff', fontSize: 13, fontWeight: '900' },
 });

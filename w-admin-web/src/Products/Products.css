@@ -2,3 +2,65 @@
   color: #26374a !important;
   font-weight: 700;
 }
+
+.product-qr-preview {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 16px;
+  border: 1px solid #e9edf2;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.product-qr-code {
+  display: grid;
+  justify-items: center;
+  gap: 7px;
+  width: max-content;
+  padding: 10px;
+  border: 1px solid #e9edf2;
+  border-radius: 6px;
+  color: #26374a;
+  background: #fff;
+}
+
+.product-qr-code strong {
+  font-size: 11px;
+}
+
+.product-qr-copy h3 {
+  margin: 0 0 6px;
+  font-size: 13px;
+}
+
+.product-qr-copy p {
+  margin: 0 0 10px;
+  color: #7d8a9a;
+  font-size: 11px;
+}
+
+.product-qr-preview button,
+.product-qr-cell button {
+  min-height: 28px;
+  padding: 0 9px;
+  border: 1px solid #13845b;
+  border-radius: 5px;
+  color: #fff;
+  background: #13845b;
+  font-size: 10px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.product-qr-cell {
+  margin: 0 auto;
+  padding: 6px;
+}
+
+@media (max-width: 520px) {
+  .product-qr-preview {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}

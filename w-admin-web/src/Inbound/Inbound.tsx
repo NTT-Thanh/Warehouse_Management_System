@@ -11,7 +11,7 @@ type Supplier = { id: number; name: string };
 type Product = { id: number; sku: string; name: string };
 type Batch = { id: number; batch_code: string; product_id: number };
 type FormState = Record<string, string>;
-type ReceiptLineForm = { key: number; product_id: string; batch_id: string; expected_quantity: string; actual_quantity: string };
+type ReceiptLineForm = { key: number; product_id: string; batch_id: string; expected_quantity: string };
 
 const statuses = ['Pending', 'Receiving', 'Completed', 'Cancelled'];
 const statusLabels: Record<string, string> = { Pending: 'Chờ xử lý', Receiving: 'Đang nhận hàng', Completed: 'Hoàn thành', Cancelled: 'Đã hủy' };
@@ -19,7 +19,7 @@ const emptyForm: FormState = {
     receipt_code: '', supplier_id: '', status: 'Pending', note: '',
 };
 const emptyReceiptLine = (key: number): ReceiptLineForm => ({
-    key, product_id: '', batch_id: '', expected_quantity: '1', actual_quantity: '0',
+    key, product_id: '', batch_id: '', expected_quantity: '1',
 });
 
 export default function InboundManagement({ currentUser }: { currentUser: SignedInUser }) {
@@ -72,7 +72,12 @@ export default function InboundManagement({ currentUser }: { currentUser: Signed
     const fields: ManagementField[] = [
         { name: 'receipt_code', label: 'Mã phiếu nhập', required: true, maxLength: 50 },
         { name: 'supplier_id', label: 'Nhà cung cấp', required: true, options: suppliers.map((row) => ({ value: String(row.id), label: row.name })) },
-        { name: 'status', label: 'Trạng thái', required: true, options: statuses.map((value) => ({ value, label: statusLabels[value] })) },
+        ...(editingId !== null ? [{
+            name: 'status',
+            label: 'Trạng thái',
+            required: true,
+            options: statuses.map((value) => ({ value, label: statusLabels[value] })),
+        }] : []),
         { name: 'note', label: 'Ghi chú' },
     ];
 
@@ -137,17 +142,15 @@ export default function InboundManagement({ currentUser }: { currentUser: Signed
         }
         if (editingId === null && receiptLines.some((line) =>
             !line.product_id || !line.batch_id || !line.expected_quantity
-            || !Number.isInteger(Number(line.expected_quantity)) || Number(line.expected_quantity) <= 0
-            || line.actual_quantity === '' || !Number.isInteger(Number(line.actual_quantity))
-            || Number(line.actual_quantity) < 0 || Number(line.actual_quantity) > Number(line.expected_quantity))) {
-            setFormError('Mỗi dòng cần có sản phẩm, lô hàng, số lượng dự kiến lớn hơn 0 và số lượng thực nhận từ 0 đến số lượng dự kiến.');
+            || !Number.isInteger(Number(line.expected_quantity)) || Number(line.expected_quantity) <= 0)) {
+            setFormError('Mỗi dòng cần có sản phẩm, lô hàng và số lượng dự kiến lớn hơn 0.');
             setSaving(false);
             return;
         }
         const payload: ApiRecord = {
             receipt_code: form.receipt_code.trim().toUpperCase(),
             supplier_id: Number(form.supplier_id),
-            status: form.status,
+            status: editingId === null ? 'Pending' : form.status,
             note: form.note.trim() || null,
         };
         if (editingId === null) payload.created_by = currentUser.id;
@@ -161,7 +164,7 @@ export default function InboundManagement({ currentUser }: { currentUser: Signed
                         product_id: Number(line.product_id),
                         batch_id: Number(line.batch_id),
                         expected_quantity: Number(line.expected_quantity),
-                        actual_quantity: Number(line.actual_quantity),
+                        actual_quantity: 0,
                     })));
                 setSuccess('Đã thêm phiếu nhập vào MySQL.');
             } else {
@@ -204,17 +207,6 @@ export default function InboundManagement({ currentUser }: { currentUser: Signed
         }
     };
 
-    const receive = async (receipt: Receipt) => {
-        try {
-            await dataService.update('inbound_receipts', receipt.id, { status: 'Completed' });
-            setSuccess(`Đã xác nhận nhận hàng cho phiếu ${receipt.receipt_code}.`);
-            await load();
-        } catch (receiveError) {
-            console.error('Không thể xác nhận nhận hàng:', receiveError);
-            setError(getApiErrorMessage(receiveError));
-        }
-    };
-
     return <ManagementPage title="Quản lý lệnh nhập kho" description="Quản lý phiếu nhập và dòng sản phẩm trong MySQL." onRefresh={() => void load()} loading={loading}>
         <ManagementFeedback error={error} success={success} />
         <ManagementSearch value={keyword} onChange={setKeyword} onSubmit={(event) => event.preventDefault()} onReset={() => { setKeyword(''); setStatusFilter(''); }} placeholder="Tìm mã phiếu nhập hoặc nhà cung cấp..." loading={loading} filter={statusFilter} onFilterChange={setStatusFilter} filterOptions={statuses.map((value) => ({ value, label: statusLabels[value] }))} filterLabel="Tất cả trạng thái" />
@@ -227,7 +219,6 @@ export default function InboundManagement({ currentUser }: { currentUser: Signed
                     <td>{lines.length ? lines.map((line) => `${products.find((row) => row.id === line.product_id)?.sku ?? `SKU #${line.product_id}`} / ${batches.find((row) => row.id === line.batch_id)?.batch_code ?? `Lô #${line.batch_id}`} × ${line.actual_quantity}/${line.expected_quantity}`).join('; ') : receipt.note || '—'}</td>
                     <td>{formatManagementDate(receipt.created_at)}</td><td><ManagementStatus value={receipt.status} labels={statusLabels} /></td>
                     <td className="inbound-row-actions">
-                        {receipt.status !== 'Completed' && receipt.status !== 'Cancelled' && <button type="button" onClick={() => void receive(receipt)}>Nhận hàng</button>}
                         <ManagementRowActions onEdit={() => edit(receipt)} onDelete={() => void remove(receipt)} />
                     </td>
                 </tr>;
@@ -261,7 +252,6 @@ export default function InboundManagement({ currentUser }: { currentUser: Signed
                             {batches.filter((batch) => !line.product_id || products.find((product) => product.id === Number(line.product_id))?.id === batch.product_id).map((batch) => <option key={batch.id} value={batch.id}>{batch.batch_code}</option>)}
                         </select></label>
                         <label><span>Số lượng dự kiến *</span><input type="number" required min={1} step={1} value={line.expected_quantity} onChange={(event) => updateReceiptLine(line.key, 'expected_quantity', event.target.value)} /></label>
-                        <label><span>Thực nhận</span><input type="number" required min={0} step={1} value={line.actual_quantity} onChange={(event) => updateReceiptLine(line.key, 'actual_quantity', event.target.value)} /></label>
                         <button type="button" className="inbound-line-remove" onClick={() => setReceiptLines((lines) => lines.filter((item) => item.key !== line.key))} disabled={receiptLines.length === 1} aria-label={`Xóa sản phẩm dòng ${index + 1}`}>×</button>
                     </div>)}
                 </section>}

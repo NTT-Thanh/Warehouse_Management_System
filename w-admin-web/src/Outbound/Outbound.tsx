@@ -63,6 +63,16 @@ export default function OutboundManagement({ currentUser }: { currentUser: Signe
         void (async () => { await load(); })();
     }, [load]);
 
+    useEffect(() => {
+        if (!selectedOrder) return;
+
+        const closeOnEscape = (event: KeyboardEvent) => {
+            if (event.key === 'Escape') setSelectedOrder(null);
+        };
+        window.addEventListener('keydown', closeOnEscape);
+        return () => window.removeEventListener('keydown', closeOnEscape);
+    }, [selectedOrder]);
+
     const fields: ManagementField[] = [
         { name: 'order_code', label: 'Mã đơn xuất', required: true, maxLength: 50 },
         { name: 'customer_name', label: 'Khách hàng / nơi nhận', maxLength: 150 },
@@ -211,11 +221,40 @@ export default function OutboundManagement({ currentUser }: { currentUser: Signe
                 </tr>;
             })}
         </ManagementList>
-        {selectedOrder && <div className="outbound-detail">
-            <div><strong>Chi tiết đơn {selectedOrder.order_code}</strong><button type="button" onClick={() => setSelectedOrder(null)}>Đóng</button></div>
-            {details.filter((row) => row.order_id === selectedOrder.id).length === 0
-                ? <p>Đơn hàng chưa có dòng sản phẩm.</p>
-                : <ul>{details.filter((row) => row.order_id === selectedOrder.id).map((line) => <li key={line.id}>{products.find((row) => row.id === line.product_id)?.sku ?? `SKU #${line.product_id}`} — đặt {line.ordered_quantity}, đã lấy {line.picked_quantity}</li>)}</ul>}
+        {selectedOrder && <div className="modal-backdrop no-print" onMouseDown={(event) => event.target === event.currentTarget && setSelectedOrder(null)}>
+            <section className="detail-modal outbound-detail-modal" role="dialog" aria-modal="true" aria-labelledby="outbound-detail-title">
+                <div className="modal-heading">
+                    <div><span className="eyebrow">WMS / QUẢN LÝ XUẤT HÀNG</span><h2 id="outbound-detail-title">Chi tiết đơn {selectedOrder.order_code}</h2></div>
+                    <button type="button" className="modal-close" onClick={() => setSelectedOrder(null)} aria-label="Đóng">×</button>
+                </div>
+                <div className="detail-list">
+                    <div><span>Khách hàng / nơi nhận</span><strong>{selectedOrder.customer_name || '—'}</strong></div>
+                    <div><span>Đơn vị vận chuyển</span><strong>{shippings.find((row) => row.id === selectedOrder.shipping_id)?.name ?? '—'}</strong></div>
+                    <div><span>Mã vận đơn</span><strong>{selectedOrder.tracking_code || '—'}</strong></div>
+                    <div><span>Ngày tạo</span><strong>{formatManagementDate(selectedOrder.created_at)}</strong></div>
+                    <div><span>Trạng thái</span><strong><ManagementStatus value={selectedOrder.status} labels={statusLabels} /></strong></div>
+                </div>
+                <section className="outbound-detail-lines">
+                    <h3>Sản phẩm trong đơn</h3>
+                    {details.filter((line) => line.order_id === selectedOrder.id).length === 0
+                        ? <p>Đơn hàng chưa có dòng sản phẩm.</p>
+                        : <div className="management-table-wrap"><table>
+                            <thead><tr><th>SKU</th><th>Tên sản phẩm</th><th>Số lượng đặt</th><th>Đã lấy</th></tr></thead>
+                            <tbody>{details.filter((line) => line.order_id === selectedOrder.id).map((line) => {
+                                const product = products.find((row) => row.id === line.product_id);
+                                return <tr key={line.id}>
+                                    <td className="management-primary">{product?.sku ?? `SKU #${line.product_id}`}</td>
+                                    <td>{product?.name ?? 'Không tìm thấy sản phẩm'}</td>
+                                    <td>{line.ordered_quantity}</td>
+                                    <td>{line.picked_quantity}</td>
+                                </tr>;
+                            })}</tbody>
+                        </table></div>}
+                </section>
+                <div className="modal-footer">
+                    <button type="button" className="button secondary" onClick={() => setSelectedOrder(null)}>Đóng</button>
+                </div>
+            </section>
         </div>}
         {modalOpen && <div className="modal-backdrop no-print" onMouseDown={(event) => event.target === event.currentTarget && resetForm()}>
             <form className="form-modal outbound-modal" onSubmit={(event) => void save(event)}>

@@ -81,14 +81,14 @@ exports.update = async (req, res) => {
 };
 
 exports.delete = (req, res) => Model.delete(req.params.id, (err) => err ? res.status(500).json(err) : res.json({ message: 'Deleted' }));
-exports.login = (req, res) => {
+exports.login1 = (req, res) => {
     const { username, password } = req.body;
     
     if (!username || !password) {
         return res.status(400).json({ success: false, message: 'Vui lòng nhập tài khoản và mật khẩu!' });
     }
 
-    Model.getByUsername(username, (err, results) => {
+    Model.getByUsername1(username, (err, results) => {
         if (err) return res.status(500).json({ success: false, error: err });
         
         if (results.length === 0) {

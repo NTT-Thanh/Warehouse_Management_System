@@ -2,3 +2,70 @@
   color: #26374a !important;
   font-weight: 700;
 }
+
+.location-qr-code {
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  width: max-content;
+  margin: 0 auto;
+  padding: 6px;
+  border: 1px solid #e9edf2;
+  border-radius: 6px;
+  color: #26374a;
+  background: #fff;
+}
+
+.location-qr-code button {
+  min-height: 27px;
+  padding: 0 8px;
+  border: 1px solid #13845b;
+  border-radius: 5px;
+  color: #fff;
+  background: #13845b;
+  font-size: 10px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.location-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 14px;
+  border: 1px solid #e9edf2;
+  border-radius: 8px;
+  color: #718096;
+  background: #fff;
+  font-size: 11px;
+}
+
+.location-pagination > div {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.location-pagination button {
+  min-height: 30px;
+  padding: 0 10px;
+  border: 1px solid #dfe5eb;
+  border-radius: 5px;
+  color: #13845b;
+  background: #fff;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.location-pagination button:disabled {
+  cursor: not-allowed;
+  opacity: .5;
+}
+
+@media (max-width: 520px) {
+  .location-pagination {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}

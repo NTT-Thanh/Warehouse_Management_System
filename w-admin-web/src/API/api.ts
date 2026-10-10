@@ -149,6 +149,16 @@ export const dataService = {
     },
 };
 
+export const inboundService = {
+    confirmDetail: async (id: number, actualQuantity: number, note: string) => {
+        const response = await apiClient.post<{ receipt_status: string }>(`/inbound_details/${id}/confirm`, {
+            actual_quantity: actualQuantity,
+            note: note.trim() || null,
+        });
+        return response.data;
+    },
+};
+
 export const authService = {
     login: async (username: string, password: string): Promise<SignedInUser> => {
         const response = await apiClient.post('/users/login', { username, password });
